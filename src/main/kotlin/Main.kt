@@ -1,9 +1,6 @@
+import kotlinx.coroutines.*
 import kotlinx.coroutines.Dispatchers.Default
 import kotlinx.coroutines.Dispatchers.IO
-import kotlinx.coroutines.async
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 import java.net.InetAddress
 import java.net.InetAddress.*
 import java.net.InetSocketAddress
@@ -13,15 +10,17 @@ import java.net.StandardProtocolFamily.*
 import java.net.StandardSocketOptions.*
 import java.nio.ByteBuffer
 import java.nio.channels.DatagramChannel
+import java.time.Instant
+import java.time.Instant.*
 import java.util.concurrent.PriorityBlockingQueue
 import kotlin.experimental.or
 import kotlin.random.Random
 import kotlin.text.Charsets.UTF_8
+import kotlin.time.Duration.Companion.seconds
 
 const val PORT = 5000
 const val BROADCAST = "230.0.0.0"
 const val SIZE = 65
-const val COUNT = 5
 
 const val OP_PROPOSE = 1
 const val OP_STATE = 2
@@ -49,7 +48,7 @@ suspend fun Node(
     channel.join(getByName(BROADCAST), loopback)
     val broadcast = InetSocketAddress(BROADCAST, PORT)
     val buffer = ByteBuffer.allocateDirect(SIZE)
-    val proposals = Array(COUNT) { ByteArray(SIZE) }
+    val proposals = Array(n) { ByteArray(SIZE) }
     val majority = (n / 2) + 1
     var index: Int
     fun phase(
@@ -81,6 +80,7 @@ suspend fun Node(
                 VOTE_LOST or p -> ++lost
             }
         }
+        println("Zero: $zero One: $one")
         return if (zero >= f + 1) null
         else if (one >= f + 1) common
         else phase((p + 1).toByte(), when {
@@ -105,7 +105,7 @@ suspend fun Node(
             if (proposals[index][0].toInt() and mask != 0)
                 ++index
         }
-        val request = proposals.find {
+        val request = (0 until index).map { proposals[it] }.find {
             proposals.count(it::contentEquals) >= majority
         }?.let { it.copyOfRange(1, (it[0].toInt() and 0b111111) + 1) }
         val state = if (request != null) STATE_ONE else STATE_ZERO
@@ -115,18 +115,23 @@ suspend fun Node(
 
 fun main() = runBlocking {
     val random = Random(0L)
-    val n = 6; val f = 2
+    val n = 10; val f = (n / 2) - 1
     val nodes = (0 until n).map { i ->
-        PriorityBlockingQueue<String>().apply {
+        PriorityBlockingQueue<Pair<Instant, String>>(10, compareBy { it.first }).apply {
             launch(Default) { try {
                 Node(n, f, random, {
                     println("Node: $i - ${it?.toString(UTF_8)}")
-                }, { take().toByteArray(UTF_8) })
+                }, { take().second.toByteArray(UTF_8) })
             } catch (reason: Throwable) {
                 reason.printStackTrace()
             } }
         }
     }
-    nodes.forEach { it.offer("hello world") }
+    (0..10).forEach { i ->
+        nodes.forEach {
+            it.offer(now() to "hello world $i")
+        }
+        delay(1.seconds)
+    }
     println("Done!")
 }
