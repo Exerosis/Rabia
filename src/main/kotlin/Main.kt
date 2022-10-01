@@ -37,7 +37,7 @@ const val VOTE_LOST = (OP_LOST shl 6).toByte()
 suspend fun Node(
     n: Int, f: Int, random: Random,
     commit: suspend (ByteArray?) -> (Unit),
-    commands: suspend () -> (ByteArray)
+    commands: suspend () -> (ByteArray),
 ) = withContext(IO) {
     val channel = DatagramChannel.open(INET)
     val loopback = NetworkInterface.getByName("lo")
@@ -50,6 +50,7 @@ suspend fun Node(
     val buffer = ByteBuffer.allocateDirect(SIZE)
     val proposals = Array(n) { ByteArray(SIZE) }
     val majority = (n / 2) + 1
+    val proposal = ByteArray(SIZE)
     var index: Int
     fun phase(
         p: Byte, state: Byte,
@@ -80,7 +81,6 @@ suspend fun Node(
                 VOTE_LOST or p -> ++lost
             }
         }
-        println("Zero: $zero One: $one")
         return if (zero >= f + 1) null
         else if (one >= f + 1) common
         else phase((p + 1).toByte(), when {
@@ -90,12 +90,13 @@ suspend fun Node(
                 STATE_ZERO else STATE_ONE
         }, common)
     }
-    while (channel.isOpen) {
+    outer@ while (channel.isOpen) {
         //Send proposals
         val command = commands()
         assert(command.size <= 64) { "Message too large!" }
         val propose = (OP_PROPOSE shl 6) or command.size
         buffer.clear().put(propose.toByte()).put(command)
+        buffer.get(0, proposal)
         channel.send(buffer.flip(), broadcast)
         index = 0
         while (index < (n - f)) {
@@ -105,31 +106,46 @@ suspend fun Node(
             if (proposals[index][0].toInt() and mask != 0)
                 ++index
         }
-        val request = (0 until index).map { proposals[it] }.find {
-            proposals.count(it::contentEquals) >= majority
-        }?.let { it.copyOfRange(1, (it[0].toInt() and 0b111111) + 1) }
-        val state = if (request != null) STATE_ONE else STATE_ZERO
-        commit(phase(0, state, request))
+        var count = 0
+        while (index-- > 0) {
+//            println("First: ${proposals[index][0]}")
+//            println("Second: ${proposal[0]}")
+//            println("Propose: $propose")
+//            println("")
+            if (proposals[index].contentEquals(proposal))
+                if (++count >= majority) {
+                    commit(phase(0, STATE_ONE, command))
+                    continue@outer
+                }
+        }
+        commit(phase(0, STATE_ZERO, command))
     }
 }
 
 fun main() = runBlocking {
     val random = Random(0L)
-    val n = 10; val f = (n / 2) - 1
+    val n = 5; val f = (n / 2) - 1
     val nodes = (0 until n).map { i ->
         PriorityBlockingQueue<Pair<Instant, String>>(10, compareBy { it.first }).apply {
             launch(Default) { try {
+                var last: Pair<Instant, String>? = null
                 Node(n, f, random, {
+                    if (it?.toString(UTF_8) != last!!.second)
+                        offer(last!!)
                     println("Node: $i - ${it?.toString(UTF_8)}")
-                }, { take().second.toByteArray(UTF_8) })
+                }, {
+                    last = take()
+                    last!!.second.toByteArray(UTF_8)
+                })
             } catch (reason: Throwable) {
                 reason.printStackTrace()
             } }
         }
     }
-    (0..10).forEach { i ->
+    (0..2).forEach { i ->
         nodes.forEach {
-            it.offer(now() to "hello world $i")
+            if (random.nextBoolean() || random.nextBoolean())
+                it.offer(now() to "hello world $i")
         }
         delay(1.seconds)
     }
