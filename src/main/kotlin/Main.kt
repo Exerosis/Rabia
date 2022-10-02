@@ -100,7 +100,7 @@ suspend fun Node(
         while (index < majority) {
             channel.receive(buffer.clear())
             heads[index] = buffer.getLong(0)
-            if (heads[index] and MASK_PROPOSE != 0L) {
+            if (heads[index] shr 58 == OP_PROPOSE) {
                 tails[index] = buffer.getInt(8)
                 var count = 1
                 for (i in 0 until index) {
@@ -180,10 +180,10 @@ suspend fun CoroutineScope.SMR(
 fun main() {
     runBlocking(IO) {
         val address = getLocalHost()
-        for (i in 0..5) {
+        for (i in 0 until 3) {
             //create a node that takes messages on 1000
             //and runs weak mvc instances on 2000-2002
-            SMR(address, 10, 1000, 2000, 2001, 2002)
+            SMR(address, 10, 1000, 2000)
         }
         val broadcast = InetSocketAddress(BROADCAST, 1000)
         val buffer = allocateDirect(64)
