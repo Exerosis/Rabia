@@ -35,7 +35,7 @@ const val VOTE_LOST = (OP_LOST shl 6).toByte()
 
 object Network {
     fun allows() = Random.nextInt(100) < 100
-    fun corrupts() = Random.nextInt(100) < 0
+    fun corrupts() = Random.nextInt(100) < 7
 }
 suspend fun Node(
     port: Int, address: InetAddress,
@@ -58,6 +58,7 @@ suspend fun Node(
     val majority = (n / 2) + 1
     val proposal = ByteArray(SIZE)
     var index: Int
+    println("Starting")
     fun phase(
         p: Byte, state: Byte,
         common: ByteArray?
@@ -105,7 +106,6 @@ suspend fun Node(
         val propose = (OP_PROPOSE shl 6) or command.size
         if (Network.corrupts()) {
             command.shuffle()
-            println("Corrupted!")
         }
         buffer.clear().put(propose.toByte()).put(command)
         buffer.get(0, proposal)
@@ -143,7 +143,7 @@ fun main() {
                     var runs = 0
                     var order = 0
                     var last: Pair<Instant, String>? = null
-                    val loopback = getLoopbackAddress()
+                    val loopback = getLocalHost()
                     Node(PORT, loopback, n, f, Random(random), {
                         runs++
                         if (it?.toString(UTF_8) != last!!.second)
