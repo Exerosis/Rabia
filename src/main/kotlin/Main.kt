@@ -138,7 +138,7 @@ fun UDP(
 }
 
 suspend fun CoroutineScope.SMR(
-    address: InetAddress,
+    address: InetAddress, n: Int,
     port: Int, vararg pipes: Int
 ) {
     val messages = ConcurrentHashMap<MID, String>()
@@ -146,7 +146,7 @@ suspend fun CoroutineScope.SMR(
     val nodes = Array(pipes.size) { Node(10, compareBy { it.least }).apply {
         launch(IO) { try {
             var last: MID? = null; var slot = it
-            Node(pipes[it], address, pipes.size, {
+            Node(pipes[it], address, n, {
                 if (it != last) offer(last!!) else {
                     println("Slot: $slot Message: ${messages[it]}")
                     //if we don't have the original message panic and go find it.
@@ -183,7 +183,7 @@ fun main() {
         for (i in 0..5) {
             //create a node that takes messages on 1000
             //and runs weak mvc instances on 2000-2002
-            SMR(address, 1000, 2000, 2001, 2002)
+            SMR(address, 10, 1000, 2000, 2001, 2002)
         }
         val broadcast = InetSocketAddress(BROADCAST, 1000)
         val buffer = allocateDirect(64)
