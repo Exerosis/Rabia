@@ -58,14 +58,14 @@ suspend fun Node(
         buffer.clear().put(state or p)
         channel.send(buffer.flip(), broadcast)
         var zero = 0; var one = 0; var lost = 0;
-        while ((zero + one) <= majority) {
+        while ((zero + one) < majority) {
             channel.receive(buffer.clear())
             when (buffer.get(0)) {
                 STATE_ONE or p -> ++one
                 STATE_ZERO or p -> ++zero
             }
+            println("States: $zero - $one")
         }
-        println("States: $zero - $one")
         buffer.clear().put(when {
             zero >= majority -> VOTE_ZERO
             one >= majority -> VOTE_ONE
