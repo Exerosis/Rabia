@@ -103,15 +103,11 @@ suspend fun Node(
             heads[index] = buffer.getLong(0)
             if (heads[index] shr 58 == OP_PROPOSE) {
                 tails[index] = buffer.getInt(8)
-                println("Got: ${heads[index]}")
-                println("Have: ${send.least}")
                 var count = 1
                 for (i in 0 until index) {
                     if (heads[i] == heads[index] && tails[i] == tails[index]) {
-                        println("Count: ${count}")
                         if (++count >= majority) {
                             val one = heads[i] and MASK_MID == send.least && tails[i] == send.most
-                            println("Found and: $one")
                             commit(phase(0, if (one) STATE_ONE else STATE_ZERO, i))
                             continue@outer
                         }
