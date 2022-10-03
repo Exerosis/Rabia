@@ -46,14 +46,13 @@ suspend fun Node(
 ) = withContext(IO) {
     val random = Random(port)
     val f = (n / 2) - 1
-    println("F: $f")
     val channel = UDP(address, port, SIZE * n * 500)
     val broadcast = InetSocketAddress(BROADCAST, port)
     val buffer = allocateDirect(SIZE)
     val heads = LongArray(n)
     val tails = IntArray(n)
     val majority = (n / 2) + 1
-    println("Majority: $majority")
+    println("N: $n F: $f Majority: $majority")
     fun phase(p: Byte, state: Byte, common: Int): MID? {
         buffer.clear().put(state or p)
         channel.send(buffer.flip(), broadcast)
@@ -170,7 +169,6 @@ suspend fun CoroutineScope.SMR(
         while (channel.isOpen) {
             channel.receive(buffer.clear())
             val id = MID(buffer.flip().long, buffer.int)
-            println("Test: $id")
             val bytes = ByteArray(buffer.int)
             buffer.get(bytes)
             messages[id] = bytes.toString(UTF_8)
