@@ -34,7 +34,6 @@ const val VOTE_ZERO = (OP_VOTE shl 6).toByte()
 const val VOTE_ONE = (OP_VOTE shl 6 or 32).toByte()
 const val VOTE_LOST = (OP_LOST shl 6).toByte()
 
-const val MASK_PROPOSE = OP_PROPOSE shl 58
 const val MASK_MID = (0b11111L shl 58).inv()
 
 const val CORRUPTS = 0
@@ -47,7 +46,7 @@ suspend fun Node(
 ) = withContext(IO) {
     val random = Random(port)
     val f = (n / 2) - 1
-    val channel = UDP(address, port, SIZE * n * 20)
+    val channel = UDP(address, port, SIZE * n * 500)
     val broadcast = InetSocketAddress(BROADCAST, port)
     val buffer = allocateDirect(SIZE)
     val heads = LongArray(n)
@@ -57,7 +56,7 @@ suspend fun Node(
         buffer.clear().put(state or p)
         channel.send(buffer.flip(), broadcast)
         var zero = 0; var one = 0; var lost = 0;
-        while ((zero + one) < majority) {
+        while ((zero + one) <= majority) {
             channel.receive(buffer.clear())
             when (buffer.get(0)) {
                 STATE_ONE or p -> ++one
@@ -97,7 +96,7 @@ suspend fun Node(
         buffer.clear().putLong(propose).putInt(send.most)
         channel.send(buffer.flip(), broadcast)
         var index = 0;
-        while (index < majority) {
+        while (index <= majority) {
             channel.receive(buffer.clear())
             heads[index] = buffer.getLong(0)
             if (heads[index] shr 58 == OP_PROPOSE) {
@@ -198,8 +197,8 @@ fun main() {
             return@withContext time
         }
 
-        val result = (0..10).map { i -> delay(1.milliseconds); submit("hello $i") }
-        if (result != result.distinct()) println("No ordering!")
+//        val result = (0..10).map { i -> delay(1.milliseconds); submit("hello $i") }
+//        if (result != result.distinct()) println("No ordering!")
     }
     println("Done!")
 }
