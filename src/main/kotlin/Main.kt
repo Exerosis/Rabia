@@ -64,7 +64,6 @@ suspend fun Node(
                 STATE_ONE or p -> ++one
                 STATE_ZERO or p -> ++zero
             }
-            println("States: $zero - $one")
         }
         buffer.clear().put(when {
             zero >= majority -> VOTE_ZERO
@@ -82,7 +81,6 @@ suspend fun Node(
                 VOTE_LOST or p -> ++lost
             }
         }
-        println("Votes: $zero - $one - $lost")
         return if (zero >= f + 1) null
         else if (one >= f + 1) MID(heads[common] and MASK_MID, tails[common])
         else phase((p + 1).toByte(), when {
@@ -100,7 +98,7 @@ suspend fun Node(
         buffer.clear().putLong(propose).putInt(send.most)
         channel.send(buffer.flip(), broadcast)
         var index = 0;
-        while (index <= majority) {
+        while (index < majority) {
             channel.receive(buffer.clear())
             heads[index] = buffer.getLong(0)
             if (heads[index] shr 58 == OP_PROPOSE) {
