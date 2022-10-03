@@ -46,12 +46,14 @@ suspend fun Node(
 ) = withContext(IO) {
     val random = Random(port)
     val f = (n / 2) - 1
+    println("F: $f")
     val channel = UDP(address, port, SIZE * n * 500)
     val broadcast = InetSocketAddress(BROADCAST, port)
     val buffer = allocateDirect(SIZE)
     val heads = LongArray(n)
     val tails = IntArray(n)
     val majority = (n / 2) + 1
+    println("Majority: $majority")
     fun phase(p: Byte, state: Byte, common: Int): MID? {
         buffer.clear().put(state or p)
         channel.send(buffer.flip(), broadcast)
@@ -63,6 +65,7 @@ suspend fun Node(
                 STATE_ZERO or p -> ++zero
             }
         }
+        println("States: $zero - $one")
         buffer.clear().put(when {
             zero >= majority -> VOTE_ZERO
             one >= majority -> VOTE_ONE
@@ -79,6 +82,7 @@ suspend fun Node(
                 VOTE_LOST or p -> ++lost
             }
         }
+        println("Votes: $zero - $one - $lost")
         return if (zero >= f + 1) null
         else if (one >= f + 1) MID(heads[common] and MASK_MID, tails[common])
         else phase((p + 1).toByte(), when {
@@ -101,11 +105,15 @@ suspend fun Node(
             heads[index] = buffer.getLong(0)
             if (heads[index] shr 58 == OP_PROPOSE) {
                 tails[index] = buffer.getInt(8)
+                println("Got: ${heads[index]}")
+                println("Have: ${send.least}")
                 var count = 1
                 for (i in 0 until index) {
                     if (heads[i] == heads[index] && tails[i] == tails[index]) {
+                        println("Count: ${count}")
                         if (++count >= majority) {
                             val one = heads[i] and MASK_MID == send.least && tails[i] == send.most
+                            println("Found and: $one")
                             commit(phase(0, if (one) STATE_ONE else STATE_ZERO, i))
                             continue@outer
                         }
@@ -168,6 +176,7 @@ suspend fun CoroutineScope.SMR(
         while (channel.isOpen) {
             channel.receive(buffer.clear())
             val id = MID(buffer.flip().long, buffer.int)
+            println("Test: $id")
             val bytes = ByteArray(buffer.int)
             buffer.get(bytes)
             messages[id] = bytes.toString(UTF_8)
@@ -179,10 +188,10 @@ suspend fun CoroutineScope.SMR(
 fun main() {
     runBlocking(IO) {
         val address = getLocalHost()
-        for (i in 0 until 3) {
+        for (i in 0 until 1) {
             //create a node that takes messages on 1000
             //and runs weak mvc instances on 2000-2002
-            SMR(address, 10, 1000, 2000)
+            SMR(address, 2, 1000, 2000)
         }
         val broadcast = InetSocketAddress(BROADCAST, 1000)
         val buffer = allocateDirect(64)
@@ -191,14 +200,14 @@ fun main() {
         suspend fun submit(message: String) = withContext(IO) {
             val bytes = message.toByteArray(UTF_8)
             val time = now().toEpochMilli()
-            buffer.clear().putLong(time).putInt(nextInt())
+            buffer.clear().putLong(time and MASK_MID).putInt(nextInt())
             buffer.putInt(bytes.size).put(bytes)
             channel.send(buffer.flip(), broadcast)
             return@withContext time
         }
 
-//        val result = (0..10).map { i -> delay(1.milliseconds); submit("hello $i") }
-//        if (result != result.distinct()) println("No ordering!")
+        val result = (0..0).map { i -> delay(1.milliseconds); submit("hello $i") }
+        if (result != result.distinct()) println("No ordering!")
     }
     println("Done!")
 }
