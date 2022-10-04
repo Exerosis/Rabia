@@ -17,6 +17,7 @@ import kotlin.math.abs
 import kotlin.random.Random
 import kotlin.random.Random.Default.nextInt
 import kotlin.text.Charsets.UTF_8
+import kotlin.time.Duration.Companion.milliseconds
 
 const val BROADCAST = "230.0.0.0"
 const val SIZE = 12
@@ -78,7 +79,7 @@ suspend fun Node(
             }
         }
         return if (zero >= f + 1) -1
-        else if (one >= f + 1) common
+        else if (one >= f + 1) common and MASK_MID
         else phase((p + 1).toByte(), when {
             zero > 0 -> STATE_ZERO
             one > 0 -> STATE_ONE
@@ -99,6 +100,7 @@ suspend fun Node(
             proposals[index] = buffer.getLong(0)
             if (proposals[index] shr 58 == OP_PROPOSE) {
                 val depth = buffer.getInt(8)
+                println("Got depth: $depth")
                 if (current < depth) continue
                 if (current > depth) current = depth
                 var count = 1
@@ -145,6 +147,7 @@ suspend fun CoroutineScope.SMR(
         launch(IO) { try {
             var last = -1L; var slot = it
             Node(pipes[it], address, n, { depth, id ->
+                println("Depth: $depth Message: ${messages[id]}")
                 assert(depth > slot) { "Trying to recommit!" }
                 assert(depth % pipes.size == it) { "Trying to pipe mix!" }
                 if (depth > slot) TODO("start catchup process.")
@@ -189,7 +192,7 @@ suspend fun CoroutineScope.SMR(
 fun main() {
     runBlocking(IO) {
         val address = getLocalHost()
-        for (i in 0 until 2) {
+        for (i in 0 until 3) {
             //create a node that takes messages on 1000
             //and runs weak mvc instances on 2000-2002
             var index = 0
@@ -212,8 +215,8 @@ fun main() {
             return@withContext time
         }
 
-//        val result = (0..0).map { i -> delay(1.milliseconds); submit("hello $i") }
-//        if (result != result.distinct()) println("No ordering!")
+        val result = (0..4).map { i -> delay(1.milliseconds); submit("hello $i") }
+        if (result != result.distinct()) println("No ordering!")
     }
     println("Done!")
 }
