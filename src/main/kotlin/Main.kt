@@ -36,7 +36,6 @@ const val VOTE_LOST = (OP_LOST shl 6).toByte()
 
 const val MASK_MID = (0b11111L shl 58).inv()
 
-data class MID(val least: Long, val most: Int)
 suspend fun Node(
     port: Int, address: InetAddress, n: Int,
     commit: suspend (Int, Long) -> (Unit),
@@ -142,7 +141,7 @@ suspend fun CoroutineScope.SMR(
     val log = LongArray(65536)
     val messages = ConcurrentHashMap<Long, String>()
     var committed = -1 //probably at least volatile int.
-    val nodes = Array(pipes.size) { Node(10, compareBy { it and 0xFFFFFFFF }).apply {
+    val nodes = Array(pipes.size) { Node(10, compareBy { it shr 32 }).apply {
         launch(IO) { try {
             var last = -1L; var slot = it
             Node(pipes[it], address, n, { depth, id ->
@@ -208,7 +207,8 @@ fun main() {
             val bytes = message.toByteArray(UTF_8)
             val time = now().toEpochMilli() - EPOCH
             val random = nextInt().toLong() shl 32
-            buffer.clear().putLong(random and time and MASK_MID)
+
+            buffer.clear().putLong((time or random) and MASK_MID)
             buffer.putInt(bytes.size).put(bytes)
             channel.send(buffer.flip(), broadcast)
             return@withContext time
