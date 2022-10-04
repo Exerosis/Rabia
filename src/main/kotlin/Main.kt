@@ -100,7 +100,6 @@ suspend fun Node(
             proposals[index] = buffer.getLong(0)
             if (proposals[index] shr 58 == OP_PROPOSE) {
                 val depth = buffer.getInt(8)
-                println("Got depth: $depth")
                 if (current < depth) continue
                 if (current > depth) current = depth
                 var count = 1
@@ -147,7 +146,7 @@ suspend fun CoroutineScope.SMR(
         launch(IO) { try {
             var last = -1L; var slot = it
             Node(pipes[it], address, n, { depth, id ->
-                println("Depth: $depth Message: ${messages[id]}")
+//                println("Depth: $depth Message: ${messages[id]}")
                 assert(depth > slot) { "Trying to recommit!" }
                 assert(depth % pipes.size == it) { "Trying to pipe mix!" }
                 if (depth > slot) TODO("start catchup process.")
@@ -164,7 +163,6 @@ suspend fun CoroutineScope.SMR(
                         //if we have everything before
                         //attempt to commit up to here.
                     }
-                    println("Moved up the slot here")
                     //could potentially move slot forward by more than one increment
                     slot = depth + pipes.size
                 }
