@@ -201,10 +201,12 @@ fun main() {
         val buffer = allocateDirect(64)
         val channel = UDP(address, 5000, buffer.capacity())
 
+        val EPOCH = 1664855176503
         suspend fun submit(message: String) = withContext(IO) {
             val bytes = message.toByteArray(UTF_8)
-            val time = now().toEpochMilli()
-            buffer.clear().putLong(time and MASK_MID).putInt(nextInt())
+            val time = now().toEpochMilli() - EPOCH
+            val random = nextInt().toLong() shl 32
+            buffer.clear().putLong(random and time and MASK_MID)
             buffer.putInt(bytes.size).put(bytes)
             channel.send(buffer.flip(), broadcast)
             return@withContext time
