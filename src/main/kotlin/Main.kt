@@ -142,7 +142,7 @@ suspend fun CoroutineScope.SMR(
 ) {
     val log = LongArray(65536)
     val messages = ConcurrentHashMap<Long, String>()
-    var committed = 0 //probably at least volatile int.
+    var committed = -1 //probably at least volatile int.
     val nodes = Array(pipes.size) { Node(10, compareBy { it and 0xFFFFFFFF }).apply {
         launch(IO) { try {
             var last = -1L; var slot = it
@@ -164,6 +164,7 @@ suspend fun CoroutineScope.SMR(
                         //if we have everything before
                         //attempt to commit up to here.
                     }
+                    println("Moved up the slot here")
                     //could potentially move slot forward by more than one increment
                     slot = depth + pipes.size
                 }
@@ -215,7 +216,7 @@ fun main() {
             return@withContext time
         }
 
-        val result = (0..4).map { i -> delay(1.milliseconds); submit("hello $i") }
+        val result = (0..1).map { i -> delay(1.milliseconds); submit("hello $i") }
         if (result != result.distinct()) println("No ordering!")
     }
     println("Done!")
