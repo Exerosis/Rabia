@@ -1,6 +1,9 @@
 import com.github.exerosis.mynt.SocketProvider
+import com.github.exerosis.mynt.bytes
 import kotlinx.coroutines.*
 import kotlinx.coroutines.Dispatchers.IO
+import java.lang.Integer.max
+import java.lang.Integer.min
 import java.net.InetAddress
 import java.net.InetAddress.*
 import java.net.InetSocketAddress
@@ -13,6 +16,8 @@ import java.nio.channels.DatagramChannel
 import java.nio.channels.ServerSocketChannel
 import java.time.Instant.*
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 import java.util.concurrent.PriorityBlockingQueue
 import kotlin.experimental.or
 import kotlin.math.abs
@@ -43,7 +48,7 @@ suspend fun Node(
     commit: suspend (Int, Long) -> (Unit),
     messages: suspend () -> (Long),
     slot: suspend () -> (Int),
-) = withContext(IO) {
+) = withContext(dispatcher) {
     val f = (n / 2) - 1
     val channel = UDP(address, port, SIZE * n * 50)
     val broadcast = InetSocketAddress(BROADCAST, port)
@@ -135,16 +140,19 @@ fun UDP(
     join(getByName(BROADCAST), network)
 }
 
-suspend fun CoroutineScope.SMR(
+val executor: ExecutorService = Executors.newCachedThreadPool()
+val dispatcher = executor.asCoroutineDispatcher()
+
+suspend fun SMR(
     address: InetAddress, n: Int,
     port: Int, vararg pipes: Int,
     commit: (String) -> (Unit)
-) {
-    val log = LongArray(65536)
+) = withContext(dispatcher) {
+    val log = LongArray(65536) //Filled with NONE
     val messages = ConcurrentHashMap<Long, String>()
     var committed = -1 //probably at least volatile int.
     val nodes = Array(pipes.size) { Node(10, compareBy { it shr 32 }).apply {
-        launch(IO) { try {
+        launch { try {
             var last = -1L; var slot = it
             Node(pipes[it], address, n, { depth, id ->
 //                println("Depth: $depth Message: ${messages[id]}")
@@ -170,7 +178,7 @@ suspend fun CoroutineScope.SMR(
             }, { take().also { last = it } }, { slot })
         } catch (reason: Throwable) { reason.printStackTrace() }}
     } }
-    launch(IO) { try {
+    launch { try {
         val buffer = allocateDirect(64)
         val channel = UDP(address, port, buffer.capacity())
         while (channel.isOpen) {
@@ -182,13 +190,31 @@ suspend fun CoroutineScope.SMR(
             nodes[abs(id.hashCode()) % nodes.size].offer(id)
         }
     } catch (reason: Throwable) { reason.printStackTrace() } }
-    launch(IO) { try {
-        val provider = SocketProvider(65536, AsynchronousChannelGroup.withThreadPool())
+    launch { try {
+        val group = AsynchronousChannelGroup.withThreadPool(executor)
+        val provider = SocketProvider(65536, group)
+        while (provider.isOpen) {
+            provider.accept(InetSocketAddress(address, port)).apply {
+                launch { while (isOpen) {
+                    val start = read.int()
+                    val end = read.int()
+                    for (i in max(0, start)..min(end, log.size)) {
+                        val message = messages[log[i]]
+                        if (message != null) {
+                            write.long(log[i])
+                            val bytes = message.toByteArray(UTF_8)
+                            write.short(bytes.size.toShort())
+                            write.bytes(bytes)
+                        }
+                    }
+                } }
+            }
+        }
     } catch (reason: Throwable) { reason.printStackTrace()} }
 }
 
 fun main() {
-    runBlocking(IO) {
+    runBlocking {
         val address = getLocalHost()
         for (i in 0 until 2) {
             //create a node that takes messages on 1000
@@ -203,7 +229,7 @@ fun main() {
         val channel = UDP(address, 5000, buffer.capacity())
 
         val EPOCH = 1664855176503
-        suspend fun submit(message: String) = withContext(IO) {
+        fun submit(message: String): Long {
             val bytes = message.toByteArray(UTF_8)
             val time = now().toEpochMilli() - EPOCH
             val random = nextInt().toLong() shl 32
@@ -211,7 +237,7 @@ fun main() {
             buffer.clear().putLong((time or random) and MASK_MID)
             buffer.putInt(bytes.size).put(bytes)
             channel.send(buffer.flip(), broadcast)
-            return@withContext time
+            return time
         }
 
 //        val result = (0..4).map { i -> delay(1.milliseconds); submit("hello $i") }
