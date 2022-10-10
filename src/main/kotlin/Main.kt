@@ -1,3 +1,4 @@
+import com.github.exerosis.mynt.SocketProvider
 import kotlinx.coroutines.*
 import kotlinx.coroutines.Dispatchers.IO
 import java.net.InetAddress
@@ -7,6 +8,7 @@ import java.net.NetworkInterface
 import java.net.StandardProtocolFamily.*
 import java.net.StandardSocketOptions.*
 import java.nio.ByteBuffer.*
+import java.nio.channels.AsynchronousChannelGroup
 import java.nio.channels.DatagramChannel
 import java.nio.channels.ServerSocketChannel
 import java.time.Instant.*
@@ -180,17 +182,15 @@ suspend fun CoroutineScope.SMR(
             nodes[abs(id.hashCode()) % nodes.size].offer(id)
         }
     } catch (reason: Throwable) { reason.printStackTrace() } }
-//    launch(IO) { try {
-//        val channel = ServerSocketChannel.open()
-//
-//
-//    } catch (reason: Throwable) { reason.printStackTrace()} }
+    launch(IO) { try {
+        val provider = SocketProvider(65536, AsynchronousChannelGroup.withThreadPool())
+    } catch (reason: Throwable) { reason.printStackTrace()} }
 }
 
 fun main() {
     runBlocking(IO) {
         val address = getLocalHost()
-        for (i in 0 until 3) {
+        for (i in 0 until 2) {
             //create a node that takes messages on 1000
             //and runs weak mvc instances on 2000-2002
             var index = 0
@@ -214,8 +214,8 @@ fun main() {
             return@withContext time
         }
 
-        val result = (0..1).map { i -> delay(1.milliseconds); submit("hello $i") }
-        if (result != result.distinct()) println("No ordering!")
+//        val result = (0..4).map { i -> delay(1.milliseconds); submit("hello $i") }
+//        if (result != result.distinct()) println("No ordering!")
     }
     println("Done!")
 }
