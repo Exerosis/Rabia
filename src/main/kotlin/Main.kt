@@ -166,7 +166,6 @@ suspend fun CoroutineScope.SMR(
                     //Update the highest index that contains a value.
                     var current: Int; do { current = highest.get() }
                     while (current < slot && !highest.compareAndSet(current, slot))
-                    highest.set(10)
                     //could potentially move slot forward by more than one increment
                     slot = depth + pipes.size
                 }
@@ -281,8 +280,8 @@ fun main() {
         }
         delay(5.seconds)
         println("Starting!")
-        val result = (0..0).map { i -> delay(1.milliseconds); submit("hello $i") }
-        if (result != result.distinct()) println("No ordering!")
+//        val result = (0..0).map { i -> delay(1.milliseconds); submit("hello $i") }
+//        if (result != result.distinct()) println("No ordering!")
     }
     println("Done!")
 }
