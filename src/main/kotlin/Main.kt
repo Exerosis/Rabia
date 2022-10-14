@@ -181,6 +181,7 @@ suspend fun CoroutineScope.SMR(
     val provider = SocketProvider(65536, group)
     val others = nodes
     suspend fun repair(start: Int, end: Int) {
+        println("Repair: $start - $end")
         others.shuffle()
         others.firstOrNull { try {
             withTimeout(5.seconds) {
