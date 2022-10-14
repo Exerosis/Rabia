@@ -201,9 +201,9 @@ suspend fun CoroutineScope.SMR(
     suspend fun catchup() {
         for (i in (committed.get() + 1)..highest.get()) {
             if (log[i] == -1L) continue
-            val message = messages.remove(log[i])
+            val message = messages.get(log[i])
             if (message != null) {
-                log[i] = 0L
+//                log[i] = 0L
                 commit(message)
                 committed.set(i)
                 continue
@@ -255,7 +255,7 @@ fun main() {
     GlobalScope.launch(dispatcher) {
         val address = getLocalHost()
         val nodes = Array(1) {
-            InetSocketAddress("192.168.10.54", 1000 + it)
+            InetSocketAddress("192.168.10.38", 1000 + it)
         }
         for (i in 0 until 1) {
             //create a node that takes messages on 1000
@@ -281,8 +281,8 @@ fun main() {
         }
         delay(0.25.seconds)
         println("Starting!")
-        val result = (0..1).map { i -> delay(1.milliseconds); submit("hello $i") }
-        if (result != result.distinct()) println("No ordering!")
+//        val result = (0..1).map { i -> delay(1.milliseconds); submit("hello $i") }
+//        if (result != result.distinct()) println("No ordering!")
     }
     println("Done!")
 }
