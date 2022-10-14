@@ -106,7 +106,6 @@ suspend fun Node(
             proposals[index] = buffer.getLong(0)
             if (proposals[index] shr 62 == OP_PROPOSE) {
                 val depth = buffer.getInt(8)
-//                if (current > depth) continue
                 if (current < depth) current = depth
                 var count = 1
                 for (i in 0 until index) {
@@ -158,7 +157,6 @@ suspend fun CoroutineScope.SMR(
         launch { try {
             var last = -1L; var slot = it
             Node(pipes[it], address, n, { depth, id ->
-                println("Depth: $depth")
                 assert(id != 0L) { "Trying to erase!"}
                 assert(depth > slot) { "Trying to reinsert!" } //is this actually an issue?
                 assert(depth % pipes.size == it) { "Trying to pipe mix!" }
@@ -167,8 +165,11 @@ suspend fun CoroutineScope.SMR(
                     //Update the highest index that contains a value.
                     var current: Int; do { current = highest.get() }
                     while (current < depth && !highest.compareAndSet(current, depth))
-                    //could potentially move slot forward by more than one increment
+                    //Could potentially move slot forward by more than one increment
                     slot = depth + pipes.size
+                    //Will this be enough to keep the logs properly cleared?
+                    messages.remove(log[slot])
+                    log[slot] = 0L
                 }
             }, {
 //                println("Distance: ${slot - committed.get()}/${log.length()}")
@@ -201,9 +202,8 @@ suspend fun CoroutineScope.SMR(
     suspend fun catchup() {
         for (i in (committed.get() + 1)..highest.get()) {
             if (log[i] == -1L) continue
-            val message = messages.get(log[i])
+            val message = messages[log[i]]
             if (message != null) {
-//                log[i] = 0L
                 commit(message)
                 committed.set(i)
                 continue
@@ -255,7 +255,7 @@ fun main() {
     GlobalScope.launch(dispatcher) {
         val address = getLocalHost()
         val nodes = Array(1) {
-            InetSocketAddress("192.168.10.38", 1000 + it)
+            InetSocketAddress("192.168.10.54", 1000 + it)
         }
         for (i in 0 until 1) {
             //create a node that takes messages on 1000
@@ -281,8 +281,8 @@ fun main() {
         }
         delay(0.25.seconds)
         println("Starting!")
-//        val result = (0..1).map { i -> delay(1.milliseconds); submit("hello $i") }
-//        if (result != result.distinct()) println("No ordering!")
+        val result = (0..1).map { i -> delay(1.milliseconds); submit("hello $i") }
+        if (result != result.distinct()) println("No ordering!")
     }
     println("Done!")
 }
