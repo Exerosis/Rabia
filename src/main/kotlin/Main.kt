@@ -158,6 +158,7 @@ suspend fun CoroutineScope.SMR(
         launch { try {
             var last = -1L; var slot = it
             Node(pipes[it], address, n, { depth, id ->
+                println("Depth: $depth")
                 assert(id != 0L) { "Trying to erase!"}
                 assert(depth > slot) { "Trying to reinsert!" } //is this actually an issue?
                 assert(depth % pipes.size == it) { "Trying to pipe mix!" }
@@ -165,7 +166,7 @@ suspend fun CoroutineScope.SMR(
                     log[depth % log.length()] = id
                     //Update the highest index that contains a value.
                     var current: Int; do { current = highest.get() }
-                    while (current < slot && !highest.compareAndSet(current, slot))
+                    while (current < depth && !highest.compareAndSet(current, depth))
                     //could potentially move slot forward by more than one increment
                     slot = depth + pipes.size
                 }
