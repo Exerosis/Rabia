@@ -106,8 +106,8 @@ suspend fun Node(
             proposals[index] = buffer.getLong(0)
             if (proposals[index] shr 62 == OP_PROPOSE) {
                 val depth = buffer.getInt(8)
-                if (current < depth) continue
-                if (current > depth) current = depth
+//                if (current > depth) continue
+                if (current < depth) current = depth
                 var count = 1
                 for (i in 0 until index) {
                     if (proposals[i] == proposals[index]) {
@@ -278,10 +278,10 @@ fun main() {
             channel.send(buffer.flip(), broadcast)
             return time
         }
-        delay(5.seconds)
+        delay(0.25.seconds)
         println("Starting!")
-//        val result = (0..0).map { i -> delay(1.milliseconds); submit("hello $i") }
-//        if (result != result.distinct()) println("No ordering!")
+        val result = (0..1).map { i -> delay(1.milliseconds); submit("hello $i") }
+        if (result != result.distinct()) println("No ordering!")
     }
     println("Done!")
 }
