@@ -146,7 +146,7 @@ val dispatcher = executor.asCoroutineDispatcher()
 var test = 0
 suspend fun CoroutineScope.SMR(
     n: Int, nodes: Array<InetSocketAddress>,
-    address: InetAddress, port: Int,
+    address: InetAddress, port: Int, tcp: Int,
     vararg pipes: Int,
     commit: (String) -> (Unit)
 ) {
@@ -232,7 +232,7 @@ suspend fun CoroutineScope.SMR(
         }
     } catch (reason: Throwable) { reason.printStackTrace() } }
     launch { try {
-        val thing = InetSocketAddress(address, 1000 + test++)
+        val thing = InetSocketAddress(address, tcp)
         while (provider.isOpen) {
             provider.accept(thing).apply { launch {
                 val start = read.int()
@@ -253,13 +253,14 @@ suspend fun CoroutineScope.SMR(
 fun main() {
     GlobalScope.launch(dispatcher) {
         val address = getLocalHost()
-        val nodes = Array(2) { InetSocketAddress(address, 1000 + it) }
-        for (i in 0 until 2) {
+        val nodes = Array(1) {
+            InetSocketAddress("192.168.10.54", 1000 + it)
+        }
+        for (i in 0 until 1) {
             //create a node that takes messages on 1000
             //and runs weak mvc instances on 2000-2002
             var index = 0
-            val temps = nodes.filter { it != nodes[i] }.toTypedArray()
-            SMR(2, temps, address, 1000, 2000) {
+            SMR(2, nodes, address, 1000, 1000 + i, 2000) {
                 println("${index++}: $it")
             }
         }
