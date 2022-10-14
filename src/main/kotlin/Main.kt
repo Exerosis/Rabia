@@ -1,30 +1,30 @@
 import com.github.exerosis.mynt.SocketProvider
 import com.github.exerosis.mynt.bytes
 import kotlinx.coroutines.*
-import kotlinx.coroutines.Dispatchers.IO
-import java.lang.Integer.max
-import java.lang.Integer.min
 import java.net.InetAddress
 import java.net.InetAddress.*
 import java.net.InetSocketAddress
 import java.net.NetworkInterface
 import java.net.StandardProtocolFamily.*
 import java.net.StandardSocketOptions.*
+import java.nio.ByteBuffer
 import java.nio.ByteBuffer.*
 import java.nio.channels.AsynchronousChannelGroup
 import java.nio.channels.DatagramChannel
-import java.nio.channels.ServerSocketChannel
 import java.time.Instant.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.PriorityBlockingQueue
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLongArray
 import kotlin.experimental.or
 import kotlin.math.abs
 import kotlin.random.Random
 import kotlin.random.Random.Default.nextInt
 import kotlin.text.Charsets.UTF_8
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 const val BROADCAST = "230.0.0.0"
 const val SIZE = 12
@@ -41,7 +41,7 @@ const val VOTE_ZERO = (OP_VOTE shl 6).toByte()
 const val VOTE_ONE = (OP_VOTE shl 6 or 32).toByte()
 const val VOTE_LOST = (OP_LOST shl 6).toByte()
 
-const val MASK_MID = (0b11111L shl 58).inv()
+const val MASK_MID = (0b11L shl 62).inv()
 
 suspend fun Node(
     port: Int, address: InetAddress, n: Int,
@@ -94,7 +94,7 @@ suspend fun Node(
         }, common)
     }
     outer@ while (channel.isOpen) {
-        val proposed = OP_PROPOSE shl 58 or messages()
+        val proposed = OP_PROPOSE shl 62 or messages()
         var current = slot()
         buffer.clear().putLong(proposed).putInt(current)
         channel.send(buffer.flip(), broadcast)
@@ -104,7 +104,7 @@ suspend fun Node(
         while (index < majority) {
             channel.receive(buffer.clear())
             proposals[index] = buffer.getLong(0)
-            if (proposals[index] shr 58 == OP_PROPOSE) {
+            if (proposals[index] shr 62 == OP_PROPOSE) {
                 val depth = buffer.getInt(8)
                 if (current < depth) continue
                 if (current > depth) current = depth
@@ -143,41 +143,82 @@ fun UDP(
 val executor: ExecutorService = Executors.newCachedThreadPool()
 val dispatcher = executor.asCoroutineDispatcher()
 
-suspend fun SMR(
-    address: InetAddress, n: Int,
-    port: Int, vararg pipes: Int,
+var test = 0
+suspend fun CoroutineScope.SMR(
+    n: Int, nodes: Array<InetSocketAddress>,
+    address: InetAddress, port: Int,
+    vararg pipes: Int,
     commit: (String) -> (Unit)
-) = withContext(dispatcher) {
-    val log = LongArray(65536) //Filled with NONE
+) {
+    val log = AtomicLongArray(65536) //Filled with NONE
     val messages = ConcurrentHashMap<Long, String>()
-    var committed = -1 //probably at least volatile int.
-    val nodes = Array(pipes.size) { Node(10, compareBy { it shr 32 }).apply {
+    val committed = AtomicInteger(-1)
+    val highest = AtomicInteger(-1)
+    val instances = Array(pipes.size) { Node(10, compareBy { it and 0xFFFFFFFF }).apply {
         launch { try {
             var last = -1L; var slot = it
             Node(pipes[it], address, n, { depth, id ->
-//                println("Depth: $depth Message: ${messages[id]}")
-                assert(depth > slot) { "Trying to recommit!" }
+                assert(id != 0L) { "Trying to erase!"}
+                assert(depth > slot) { "Trying to reinsert!" } //is this actually an issue?
                 assert(depth % pipes.size == it) { "Trying to pipe mix!" }
-                if (depth > slot) TODO("start catchup process.")
                 if (id != last) offer(last) else {
-                    log[depth] = id
-                    if (depth == committed + 1) {
-                        val message = messages[id]
-                        if (message != null) {
-                            commit(message)
-                            committed = depth
-                        } else TODO("Request message data!")
-                    } else if (depth > committed) {
-                        TODO("Do this iterative commit!")
-                        //if we have everything before
-                        //attempt to commit up to here.
-                    }
+                    log[depth % log.length()] = id
+                    //Update the highest index that contains a value.
+                    var current: Int; do { current = highest.get() }
+                    while (current < slot && !highest.compareAndSet(current, slot))
+                    highest.set(10)
                     //could potentially move slot forward by more than one increment
                     slot = depth + pipes.size
                 }
-            }, { take().also { last = it } }, { slot })
-        } catch (reason: Throwable) { reason.printStackTrace() }}
+            }, {
+//                println("Distance: ${slot - committed.get()}/${log.length()}")
+                while ((slot - committed.get()) >= log.length()) {}
+                take().also<Long> { last = it }
+            }, { slot })
+        } catch (reason: Throwable) { reason.printStackTrace() } }
     } }
+    val group = AsynchronousChannelGroup.withThreadPool(executor)
+    val provider = SocketProvider(65536, group)
+    val others = nodes
+    suspend fun repair(start: Int, end: Int) {
+        others.shuffle()
+        others.firstOrNull { try {
+            withTimeout(5.seconds) {
+                provider.connect(it).apply {
+                    write.int(start); write.int(end)
+                    for (i in start..end) {
+                        val id = read.long()
+                        val bytes = read.bytes(read.short().toInt())
+                        if (bytes.isNotEmpty())
+                            messages[id] = bytes.toString(UTF_8)
+                        log[i % log.length()] = id
+                    }; close()
+                }; true
+            }
+        } catch (_: Throwable) { false } }
+    }
+    suspend fun catchup() {
+        for (i in (committed.get() + 1)..highest.get()) {
+            if (log[i] == -1L) continue
+            val message = messages.remove(log[i])
+            if (message != null) {
+                log[i] = 0L
+                commit(message)
+                committed.set(i)
+                continue
+            }
+            for (j in highest.get() downTo i + 1)
+                if (log[j] == 0L || messages[log[j]] == null)
+                    return repair(i, j)
+            break
+        }
+    }
+    launch { try {
+        while (isActive) {
+            delay(1.seconds)
+            catchup()
+        }
+    } catch (reason: Throwable) { reason.printStackTrace() } }
     launch { try {
         val buffer = allocateDirect(64)
         val channel = UDP(address, port, buffer.capacity())
@@ -187,40 +228,38 @@ suspend fun SMR(
             val bytes = ByteArray(buffer.int)
             buffer.get(bytes)
             messages[id] = bytes.toString(UTF_8)
-            nodes[abs(id.hashCode()) % nodes.size].offer(id)
+            instances[abs(id.hashCode()) % instances.size].offer(id)
         }
     } catch (reason: Throwable) { reason.printStackTrace() } }
     launch { try {
-        val group = AsynchronousChannelGroup.withThreadPool(executor)
-        val provider = SocketProvider(65536, group)
+        val thing = InetSocketAddress(address, 1000 + test++)
         while (provider.isOpen) {
-            provider.accept(InetSocketAddress(address, port)).apply {
-                launch { while (isOpen) {
-                    val start = read.int()
-                    val end = read.int()
-                    for (i in max(0, start)..min(end, log.size)) {
-                        val message = messages[log[i]]
-                        if (message != null) {
-                            write.long(log[i])
-                            val bytes = message.toByteArray(UTF_8)
-                            write.short(bytes.size.toShort())
-                            write.bytes(bytes)
-                        }
-                    }
-                } }
-            }
+            provider.accept(thing).apply { launch {
+                val start = read.int()
+                val end = read.int()
+                for (i in start..end) {
+                    val id = log[i % log.length()]
+                    write.long(id)
+                    val message = messages[id].orEmpty()
+                    val bytes = message.toByteArray(UTF_8)
+                    write.short(bytes.size.toShort())
+                    write.bytes(bytes)
+                }
+            } }
         }
     } catch (reason: Throwable) { reason.printStackTrace()} }
 }
 
 fun main() {
-    runBlocking {
+    GlobalScope.launch(dispatcher) {
         val address = getLocalHost()
+        val nodes = Array(2) { InetSocketAddress(address, 1000 + it) }
         for (i in 0 until 2) {
             //create a node that takes messages on 1000
             //and runs weak mvc instances on 2000-2002
             var index = 0
-            SMR(address, 5, 1000, 2000) {
+            val temps = nodes.filter { it != nodes[i] }.toTypedArray()
+            SMR(2, temps, address, 1000, 2000) {
                 println("${index++}: $it")
             }
         }
@@ -233,15 +272,15 @@ fun main() {
             val bytes = message.toByteArray(UTF_8)
             val time = now().toEpochMilli() - EPOCH
             val random = nextInt().toLong() shl 32
-
             buffer.clear().putLong((time or random) and MASK_MID)
             buffer.putInt(bytes.size).put(bytes)
             channel.send(buffer.flip(), broadcast)
             return time
         }
-
-//        val result = (0..4).map { i -> delay(1.milliseconds); submit("hello $i") }
-//        if (result != result.distinct()) println("No ordering!")
+        delay(5.seconds)
+        println("Starting!")
+        val result = (0..0).map { i -> delay(1.milliseconds); submit("hello $i") }
+        if (result != result.distinct()) println("No ordering!")
     }
     println("Done!")
 }
