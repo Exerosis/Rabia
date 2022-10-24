@@ -50,7 +50,7 @@ suspend fun Node(
     slot: suspend () -> (Int),
 ) = withContext(dispatcher) {
     val f = (n / 2) - 1
-    val channel = UDP(address, port, SIZE * n * 50)
+    val channel = UDP(address, port,  65527)
     val broadcast = InetSocketAddress(BROADCAST, port)
     val buffer = allocateDirect(SIZE)
     val majority = (n / 2) + 1
@@ -142,8 +142,7 @@ fun UDP(
 val executor: ExecutorService = Executors.newCachedThreadPool()
 val dispatcher = executor.asCoroutineDispatcher()
 
-var test = 0
-suspend fun CoroutineScope.SMR(
+fun CoroutineScope.SMR(
     n: Int, nodes: Array<InetSocketAddress>,
     address: InetAddress, port: Int, tcp: Int,
     vararg pipes: Int,
@@ -157,9 +156,9 @@ suspend fun CoroutineScope.SMR(
         launch { try {
             var last = -1L; var slot = it
             Node(pipes[it], address, n, { depth, id ->
-                assert(id != 0L) { "Trying to erase!"}
-                assert(depth > slot) { "Trying to reinsert!" } //is this actually an issue?
-                assert(depth % pipes.size == it) { "Trying to pipe mix!" }
+                if (id == 0L) { error("Trying to erase!") }
+                if (depth < slot) { error("Trying to reinsert!") } //is this actually an issue?
+                if (depth % pipes.size != it) { error("Trying to pipe mix!") }
                 if (id != last) offer(last) else {
                     log[depth % log.length()] = id
                     //Update the highest index that contains a value.
@@ -172,7 +171,6 @@ suspend fun CoroutineScope.SMR(
                     log[slot] = 0L
                 }
             }, {
-//                println("Distance: ${slot - committed.get()}/${log.length()}")
                 while ((slot - committed.get()) >= log.length()) {}
                 take().also<Long> { last = it }
             }, { slot })
@@ -252,16 +250,17 @@ suspend fun CoroutineScope.SMR(
 }
 
 fun main() {
-    GlobalScope.launch(dispatcher) {
+    runBlocking(dispatcher) {
         val address = getLocalHost()
-        val nodes = Array(1) {
-            InetSocketAddress("192.168.10.54", 1000 + it)
-        }
-        for (i in 0 until 1) {
+//        val nodes = Array(1) {
+//            InetSocketAddress("192.168.10.54", 1000 + it)
+//        }
+        val nodes = emptyArray<InetSocketAddress>()
+        for (i in 0 until 5) {
             //create a node that takes messages on 1000
             //and runs weak mvc instances on 2000-2002
             var index = 0
-            SMR(2, nodes, address, 1000, 1000 + i, 2000) {
+            SMR(5, nodes, address, 1000, 1000 + i, 2000) {
                 println("${index++}: $it")
             }
         }
@@ -281,7 +280,7 @@ fun main() {
         }
         delay(0.25.seconds)
         println("Starting!")
-        val result = (0..1).map { i -> delay(1.milliseconds); submit("hello $i") }
+        val result = (0..10000).map { i -> delay(1.milliseconds); submit("hello $i") }
         if (result != result.distinct()) println("No ordering!")
     }
     println("Done!")
