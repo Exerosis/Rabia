@@ -158,13 +158,13 @@ fun CoroutineScope.SMR(
     val committed = AtomicInteger(-1)
     val highest = AtomicInteger(-1)
     val instances = Array(pipes.size) { Node(10, compareBy { it and 0xFFFFFFFF }).apply {
-        launch {
-            while (true) {
-                val first = peek()
-                println("Node: $tcp First: $first Size: ${size}")
-                delay(1.seconds)
-            }
-        }
+//        launch {
+//            while (true) {
+//                val first = peek()
+//                println("Node: $tcp First: $first Size: ${size}")
+//                delay(1.seconds)
+//            }
+//        }
         launch { try {
             delay(5.seconds)
             var last = -1L; var slot = it
@@ -336,9 +336,9 @@ fun main() {
         }
         delay(1.seconds)
         println("Starting!")
-//        val result = (0..10000).map { i -> submit("hello $i") }
-//        println("Sent: $test")
-//        if (result != result.distinct()) println("No ordering!")
+        val result = (0..10).map { i -> submit("hello $i") }
+        println("Sent: $test")
+        if (result != result.distinct()) println("No ordering!")
     }
     println("Done!")
 }
