@@ -265,31 +265,43 @@ fun CoroutineScope.SMR(
 @OptIn(ExperimentalTime::class)
 fun main() {
     runBlocking(dispatcher) {
-        val test = UDP(getLocalHost(), 1000, 65000)
+        val test =  DatagramChannel.open(INET)
+        test.bind(InetSocketAddress(1000))
+        test.setOption(SO_SNDBUF, 65000)
+        test.setOption(SO_RCVBUF, 65000)
         val times = LongArray(1000)
-        launch {
-            var i = 0
+        val client = false
+        val address = if (client) InetSocketAddress("192.168.10.54", 1000)
+        else InetSocketAddress("192.168.10.32", 1000)
+        //loopback
+        if (!client) {
             val buffer = allocateDirect(12)
             while (isActive) {
                 test.receive(buffer.clear())
-                buffer.getInt(0)
-                times[i++ % times.size] = System.nanoTime() - buffer.getLong(4)
+                test.send(buffer, address)
             }
-        }
-        launch {
+        } else {
+            launch {
+                val buffer = allocateDirect(12)
+                var i = 0
+                while (isActive) {
+                    test.receive(buffer.clear())
+                    buffer.getInt(0)
+                    times[i++ % times.size] = System.nanoTime() - buffer.getLong(4)
+                }
+            }
+            launch {
+                while (isActive) {
+                    delay(1.seconds)
+                    println("Avg: ${times.average().nanoseconds}")
+                }
+            }
+            val buffer = allocateDirect(12)
             while (isActive) {
-                delay(1.seconds)
-                println("Avg: ${times.average().nanoseconds}")
+                delay(5.nanoseconds)
+                buffer.clear().putInt(10).putLong(System.nanoTime())
+                test.send(buffer.flip(), address)
             }
-        }
-        delay(1.seconds)
-        println("Starting test!")
-        val buffer = allocateDirect(12)
-        val address = InetSocketAddress(BROADCAST, 1000)
-        while (isActive) {
-            delay(5.nanoseconds)
-            buffer.clear().putInt(10).putLong(System.nanoTime())
-            test.send(buffer.flip(), address)
         }
         println("Done!")
 //        val address = getLoopbackAddress()
