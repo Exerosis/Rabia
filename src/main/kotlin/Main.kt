@@ -24,7 +24,12 @@ import kotlin.random.Random
 import kotlin.random.Random.Default.nextInt
 import kotlin.text.Charsets.UTF_8
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.nanoseconds
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.ExperimentalTime
+import kotlin.time.TimeMark
+import kotlin.time.TimeSource
+import kotlin.time.measureTime
 
 const val BROADCAST = "230.0.0.0"
 const val SIZE = 12
@@ -153,7 +158,15 @@ fun CoroutineScope.SMR(
     val committed = AtomicInteger(-1)
     val highest = AtomicInteger(-1)
     val instances = Array(pipes.size) { Node(10, compareBy { it and 0xFFFFFFFF }).apply {
+        launch {
+            while (true) {
+                val first = peek()
+                println("Node: $tcp First: $first Size: ${size}")
+                delay(1.seconds)
+            }
+        }
         launch { try {
+            delay(5.seconds)
             var last = -1L; var slot = it
             Node(pipes[it], address, n, { depth, id ->
                 if (id == 0L) { error("Trying to erase!") }
@@ -220,7 +233,7 @@ fun CoroutineScope.SMR(
     } catch (reason: Throwable) { reason.printStackTrace() } }
     launch { try {
         val buffer = allocateDirect(64)
-        val channel = UDP(address, port, buffer.capacity())
+        val channel = UDP(address, port, 65527)
         while (channel.isOpen) {
             channel.receive(buffer.clear())
             val id = buffer.flip().long
@@ -249,39 +262,72 @@ fun CoroutineScope.SMR(
     } catch (reason: Throwable) { reason.printStackTrace()} }
 }
 
+@OptIn(ExperimentalTime::class)
 fun main() {
     runBlocking(dispatcher) {
-        val address = getLocalHost()
-//        val nodes = Array(1) {
-//            InetSocketAddress("192.168.10.54", 1000 + it)
-//        }
-        val nodes = emptyArray<InetSocketAddress>()
-        for (i in 0 until 5) {
-            //create a node that takes messages on 1000
-            //and runs weak mvc instances on 2000-2002
-            var index = 0
-            SMR(5, nodes, address, 1000, 1000 + i, 2000) {
-                println("${index++}: $it")
+        val test = UDP(getLocalHost(), 1000, 65000)
+        val times = LongArray(1000)
+        launch {
+            var i = 0
+            val buffer = allocateDirect(12)
+            while (isActive) {
+                test.receive(buffer.clear())
+                buffer.getInt(0)
+                times[i++ % times.size] = System.nanoTime() - buffer.getLong(4)
             }
         }
-        val broadcast = InetSocketAddress(BROADCAST, 1000)
-        val buffer = allocateDirect(64)
-        val channel = UDP(address, 5000, buffer.capacity())
-
-        val EPOCH = 1664855176503
-        fun submit(message: String): Long {
-            val bytes = message.toByteArray(UTF_8)
-            val time = now().toEpochMilli() - EPOCH
-            val random = nextInt().toLong() shl 32
-            buffer.clear().putLong((time or random) and MASK_MID)
-            buffer.putInt(bytes.size).put(bytes)
-            channel.send(buffer.flip(), broadcast)
-            return time
+        launch {
+            while (isActive) {
+                delay(1.seconds)
+                println("Avg: ${times.average().nanoseconds}")
+            }
         }
-        delay(0.25.seconds)
-        println("Starting!")
-        val result = (0..10000).map { i -> delay(1.milliseconds); submit("hello $i") }
-        if (result != result.distinct()) println("No ordering!")
+        delay(1.seconds)
+        println("Starting test!")
+        val buffer = allocateDirect(12)
+        val address = InetSocketAddress(BROADCAST, 1000)
+        while (isActive) {
+            delay(5.nanoseconds)
+            buffer.clear().putInt(10).putLong(System.nanoTime())
+            test.send(buffer.flip(), address)
+        }
+        println("Done!")
+//        val address = getLoopbackAddress()
+////        val nodes = Array(1) {
+////            InetSocketAddress("192.168.10.54", 1000 + it)
+////        }
+//        val nodes = emptyArray<InetSocketAddress>()
+//        for (i in 0 until 5) {
+//            //create a node that takes messages on 1000
+//            //and runs weak mvc instances on 2000-2002
+//            var index = 0
+//            SMR(5, nodes, address, 1000, 1000 + i, 2000) {
+//                println("${index++}: $it")
+//            }
+//        }
+//        val broadcast = InetSocketAddress(BROADCAST, 1000)
+//        val buffer = allocateDirect(64)
+//        val channel = UDP(address, 5000, buffer.capacity())
+//
+//        val EPOCH = 1664855176503
+//        var test = 0
+//        fun submit(message: String): Long {
+//            val bytes = message.toByteArray(UTF_8)
+//            val time = now().toEpochMilli() - EPOCH
+//            val random = nextInt().toLong() shl 32
+//            test += bytes.size
+//            test += 8
+//            test += 4
+//            buffer.clear().putLong((time or random) and MASK_MID)
+//            buffer.putInt(bytes.size).put(bytes)
+//            channel.send(buffer.flip(), broadcast)
+//            return time
+//        }
+//        delay(1.seconds)
+//        println("Starting!")
+//        val result = (0..10000).map { i -> submit("hello $i") }
+//        println("Sent: $test")
+//        if (result != result.distinct()) println("No ordering!")
     }
     println("Done!")
 }
