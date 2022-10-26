@@ -11,11 +11,11 @@ request = portal.context.makeRequestRSpec()
 
 lan = request.LAN()
 for i in [1, 2, 3, 4, 5]:
-    node = request.RawPC(f'node-{i}')
+    node = request.RawPC("node-" + str(i))
     node.disk_image = "urn:publicid:IDN+emulab.net+image+emulab-ops:docker-alpine3-std"
-    interface = node.addInterface(f'if{i}')
-    interface.component_id = f'eth{i}'
-    interface.addAddress(rspec.IPv4Address(f'192.168.1.{i}', "255.255.255.0"))
+    interface = node.addInterface("if" + str(i))
+    interface.component_id = "eth" + str(i)
+    interface.addAddress(rspec.IPv4Address("192.168.1." + str(i), "255.255.255.0"))
     lan.addInterface(interface)
 
 portal.context.printRequestRSpec()
