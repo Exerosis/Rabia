@@ -222,7 +222,7 @@ fun CoroutineScope.SMR(
     }
     suspend fun catchup() {
         val to = using.minOrNull()?.minus(1) ?: highest.get()
-        println("InUse: $using Committed: $committed To: $to Highest: ${highest.get()}")
+//        println("InUse: $using Committed: $committed To: $to Highest: ${highest.get()}")
         for (i in (committed.get() + 1)..to) {
             if (log[i] == -1L) continue
             val message = messages[log[i]]
@@ -324,7 +324,7 @@ fun main() {
             //create a node that takes messages on 1000
             //and runs weak mvc instances on 2000-2002
             var index = 0
-            SMR(2, nodes, address, 1000, 1000 + i, 2000, 2001) {
+            SMR(2, nodes, address, 1000, 1000 + i, 2000) {
 //                println("${index++}: $it")
             }
         }
