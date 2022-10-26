@@ -12,7 +12,9 @@ import java.nio.ByteBuffer.*
 import java.nio.channels.AsynchronousChannelGroup
 import java.nio.channels.DatagramChannel
 import java.time.Instant.*
+import java.util.TreeSet
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentSkipListSet
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.PriorityBlockingQueue
@@ -47,6 +49,8 @@ const val VOTE_ONE = (OP_VOTE shl 6 or 32).toByte()
 const val VOTE_LOST = (OP_LOST shl 6).toByte()
 
 const val MASK_MID = (0b11L shl 62).inv()
+
+val TESTTEST = ArrayList<Long>()
 
 suspend fun Node(
     port: Int, address: InetAddress, n: Int,
@@ -99,32 +103,36 @@ suspend fun Node(
         }, common)
     }
     outer@ while (channel.isOpen) {
-        val proposed = OP_PROPOSE shl 62 or messages()
-        var current = slot()
-        buffer.clear().putLong(proposed).putInt(current)
-        channel.send(buffer.flip(), broadcast)
-        var index = 0
-        //create this lazily
-        random = Random(current)
-        while (index < majority) {
-            channel.receive(buffer.clear())
-            proposals[index] = buffer.getLong(0)
-            if (proposals[index] shr 62 == OP_PROPOSE) {
-                val depth = buffer.getInt(8)
-                if (current < depth) current = depth
-                var count = 1
-                for (i in 0 until index) {
-                    if (proposals[i] == proposals[index]) {
-                        if (++count >= majority) {
-                            val state = if (proposals[i] == proposed) STATE_ONE else STATE_ZERO
-                            commit(current, phase(0, state, proposals[i])); continue@outer
+        withTimeout(10.milliseconds) {
+            val proposed = OP_PROPOSE shl 62 or messages()
+            var current = slot()
+            buffer.clear().putLong(proposed).putInt(current)
+            channel.send(buffer.flip(), broadcast)
+            var index = 0
+            //create this lazily
+            random = Random(current)
+            while (index < majority) {
+                channel.receive(buffer.clear())
+                proposals[index] = buffer.getLong(0)
+                if (proposals[index] shr 62 == OP_PROPOSE) {
+                    val depth = buffer.getInt(8)
+                    if (current < depth) current = depth
+                    var count = 1
+                    for (i in 0 until index) {
+                        if (proposals[i] == proposals[index]) {
+                            if (++count >= majority) {
+                                val state = if (proposals[i] == proposed) STATE_ONE else STATE_ZERO
+                                commit(current, phase(0, state, proposals[i])); return@withTimeout
+                                //continue@outer
+                            }
                         }
                     }
+                    ++index;
                 }
-                ++index;
             }
+            commit(current, phase(0, STATE_ZERO, -1))
         }
-        commit(current, phase(0, STATE_ZERO, -1))
+//        delay(1.milliseconds)
     }
 }
 
@@ -146,7 +154,7 @@ fun UDP(
 
 val executor: ExecutorService = Executors.newCachedThreadPool()
 val dispatcher = executor.asCoroutineDispatcher()
-
+val COMPARATOR = compareBy<Long> { it and 0xFFFFFFFF }.thenBy { it shr 32 }
 fun CoroutineScope.SMR(
     n: Int, nodes: Array<InetSocketAddress>,
     address: InetAddress, port: Int, tcp: Int,
@@ -157,18 +165,18 @@ fun CoroutineScope.SMR(
     val messages = ConcurrentHashMap<Long, String>()
     val committed = AtomicInteger(-1)
     val highest = AtomicInteger(-1)
-    val instances = Array(pipes.size) { Node(10, compareBy { it and 0xFFFFFFFF }).apply {
-//        launch {
-//            while (true) {
-//                val first = peek()
-//                println("Node: $tcp First: $first Size: ${size}")
-//                delay(1.seconds)
-//            }
-//        }
+    val using = ConcurrentSkipListSet<Int>()
+    val instances = Array(pipes.size) { Node(10, COMPARATOR).apply {
         launch { try {
             delay(5.seconds)
+            println("Size: $size Full: ${TESTTEST.size}")
+            val mark = System.nanoTime()
             var last = -1L; var slot = it
             Node(pipes[it], address, n, { depth, id ->
+//                println("$depth - $id != $last")
+                println("Depth: $depth Pipe: $it")
+                if (id != last)
+                    println("Slightly out of sync!")
                 if (id == 0L) { error("Trying to erase!") }
                 if (depth < slot) { error("Trying to reinsert!") } //is this actually an issue?
                 if (depth % pipes.size != it) { error("Trying to pipe mix!") }
@@ -178,15 +186,21 @@ fun CoroutineScope.SMR(
                     var current: Int; do { current = highest.get() }
                     while (current < depth && !highest.compareAndSet(current, depth))
                     //Could potentially move slot forward by more than one increment
+                    using.remove(slot)
                     slot = depth + pipes.size
                     //Will this be enough to keep the logs properly cleared?
                     messages.remove(log[slot])
                     log[slot] = 0L
                 }
             }, {
+                if (isEmpty()) println("Done in: ${(System.nanoTime() - mark).nanoseconds}")
                 while ((slot - committed.get()) >= log.length()) {}
                 take().also<Long> { last = it }
-            }, { slot })
+            }, {
+                using.add(slot)
+                println("Slot: $slot")
+                slot
+            })
         } catch (reason: Throwable) { reason.printStackTrace() } }
     } }
     val group = AsynchronousChannelGroup.withThreadPool(executor)
@@ -211,7 +225,9 @@ fun CoroutineScope.SMR(
         } catch (_: Throwable) { false } }
     }
     suspend fun catchup() {
-        for (i in (committed.get() + 1)..highest.get()) {
+        val to = using.minOrNull()?.minus(1) ?: highest.get()
+        println("InUse: $using Committed: $committed To: $to Highest: ${highest.get()}")
+        for (i in (committed.get() + 1)..to) {
             if (log[i] == -1L) continue
             val message = messages[log[i]]
             if (message != null) {
@@ -219,7 +235,7 @@ fun CoroutineScope.SMR(
                 committed.set(i)
                 continue
             }
-            for (j in highest.get() downTo i + 1)
+            for (j in to downTo i + 1)
                 if (log[j] == 0L || messages[log[j]] == null)
                     return repair(i, j)
             break
@@ -240,7 +256,7 @@ fun CoroutineScope.SMR(
             val bytes = ByteArray(buffer.int)
             buffer.get(bytes)
             messages[id] = bytes.toString(UTF_8)
-            instances[abs(id.hashCode()) % instances.size].offer(id)
+            instances[abs(id % instances.size).toInt()].offer(id)
         }
     } catch (reason: Throwable) { reason.printStackTrace() } }
     launch { try {
@@ -303,7 +319,7 @@ fun main() {
 //            }
 //        }
 //        println("Done!")
-        val address = getLoopbackAddress()
+        val address = getLocalHost()
 //        val nodes = Array(1) {
 //            InetSocketAddress("192.168.10.54", 1000 + it)
 //        }
@@ -312,15 +328,15 @@ fun main() {
             //create a node that takes messages on 1000
             //and runs weak mvc instances on 2000-2002
             var index = 0
-            SMR(5, nodes, address, 1000, 1000 + i, 2000) {
-                println("${index++}: $it")
+            SMR(2, nodes, address, 1000, 1000 + i, 2000, 2001) {
+//                println("${index++}: $it")
             }
         }
         val broadcast = InetSocketAddress(BROADCAST, 1000)
         val buffer = allocateDirect(64)
-        val channel = UDP(address, 5000, buffer.capacity())
+        val channel = UDP(address, 5000, 65000)
 
-        val EPOCH = 1664855176503
+        val EPOCH = 1666745204552
         var test = 0
         fun submit(message: String): Long {
             val bytes = message.toByteArray(UTF_8)
@@ -332,11 +348,12 @@ fun main() {
             buffer.clear().putLong((time or random) and MASK_MID)
             buffer.putInt(bytes.size).put(bytes)
             channel.send(buffer.flip(), broadcast)
+            TESTTEST.add((time or random) and MASK_MID)
             return time
         }
         delay(1.seconds)
         println("Starting!")
-        val result = (0..10).map { i -> submit("hello $i") }
+        val result = (0 until 20).map { i -> submit("") }
         println("Sent: $test")
         if (result != result.distinct()) println("No ordering!")
     }
