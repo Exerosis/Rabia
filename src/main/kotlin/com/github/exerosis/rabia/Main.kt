@@ -109,6 +109,7 @@ suspend fun Node(
             random = Random(current)
             while (index < majority) {
                 channel.receive(buffer.clear())
+                println("Got some data!")
                 proposals[index] = buffer.getLong(0)
                 if (proposals[index] shr 62 == OP_PROPOSE) {
                     val depth = buffer.getInt(8)
@@ -248,6 +249,7 @@ fun CoroutineScope.SMR(
         val channel = UDP(address, port, 65527)
         while (channel.isOpen) {
             channel.receive(buffer.clear())
+            println("Got some data!")
             val id = buffer.flip().long
             val bytes = ByteArray(buffer.int)
             buffer.get(bytes)
