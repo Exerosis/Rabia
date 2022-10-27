@@ -322,12 +322,12 @@ fun main() {
 //            InetSocketAddress("192.168.10.54", 1000 + it)
 //        }
         val nodes = emptyArray<InetSocketAddress>()
-        for (i in 0 until 2) {
+        for (i in 0 until 1) {
             //create a node that takes messages on 1000
             //and runs weak mvc instances on 2000-2002
             var index = 0
-            SMR(2, nodes, address, 1000, 1000 + i, 2000) {
-//                println("${index++}: $it")
+            SMR(3, nodes, address, 1000, 1000 + i, 2000) {
+                println("${index++}: $it")
             }
         }
         val broadcast = InetSocketAddress(BROADCAST, 1000)
@@ -351,7 +351,7 @@ fun main() {
         }
         delay(1.seconds)
         println("Starting!")
-        val result = (0 until 20).map { i -> submit("") }
+        val result = (0 until 100).map { i -> submit("") }
         println("Sent: $test")
         if (result != result.distinct()) println("No ordering!")
     }
