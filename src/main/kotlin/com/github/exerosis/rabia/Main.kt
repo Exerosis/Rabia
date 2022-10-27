@@ -318,7 +318,8 @@ fun main() {
 //        }
 //        println("Done!")
         val hostname = getLocalHost().hostName.split('.')[0]
-        val address = getByName("192.168.1.${hostname.split('-')[1]}")
+//        val address = getByName("192.168.1.${hostname.split('-')[1]}")
+        val address = getLoopbackAddress()
         println("localhost: $address")
         println("HOSTNAME: $hostname")
 //        val nodes = Array(1) {
