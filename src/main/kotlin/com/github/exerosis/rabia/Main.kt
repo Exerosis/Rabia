@@ -30,7 +30,7 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.nanoseconds
 import kotlin.time.Duration.Companion.seconds
 
-const val BROADCAST = "230.0.0.0"
+const val BROADCAST = "224.0.0.0" //230
 const val SIZE = 12
 
 const val OP_PROPOSE = 1L
@@ -323,7 +323,6 @@ fun main() {
         val address = getLoopbackAddress()
         println("localhost: $address")
         println("HOSTNAME: $hostname")
-        println("This should show up right??")
         val broadcast = InetSocketAddress(BROADCAST, 1000)
         val channel = UDP(address, 5000, 65000)
         val buffer = ByteBuffer.allocateDirect(128)
