@@ -315,9 +315,9 @@ fun main() {
 //            }
 //        }
 //        println("Done!")
-        val address = getLocalHost()
+        val hostname = getLocalHost().hostName.split('.')[0]
+        val address = getByName("192.168.1.${hostname.split('-')[1]}")
         println("localhost: $address")
-        val hostname = address.hostName.split('.')[0]
         println("HOSTNAME: $hostname")
 //        val nodes = Array(1) {
 //            InetSocketAddress("192.168.10.54", 1000 + it)
