@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="faa7768c-8f84-4f52-a6ce-61bd06da5582" name="test">
+        <fileTransfer accessType="SFTP" host="amd023.utah.cloudlab.us" port="22" sshConfigId="b706be92-ad65-4ccb-9141-18c468e32428" sshConfig="Zarnstor@amd023.utah.cloudlab.us:22 key" keyPair="true">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" keepAliveTimeout="0" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>
