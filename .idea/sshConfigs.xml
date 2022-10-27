@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project version="4">
-  <component name="SshConfigs">
-    <configs>
-      <sshConfig host="amd023.utah.cloudlab.us" id="b706be92-ad65-4ccb-9141-18c468e32428" keyPath="$USER_HOME$/.ssh/id_rsa" port="22" nameFormat="DESCRIPTIVE" username="Zarnstor" useOpenSSHConfig="true" />
-    </configs>
-  </component>
-</project>
