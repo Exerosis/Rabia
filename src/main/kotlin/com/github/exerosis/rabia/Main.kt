@@ -316,7 +316,7 @@ fun main() {
 //        }
 //        println("Done!")
         val address = getLocalHost()
-        val hostname = address.hostName
+        val hostname = address.hostName.split('.')[0]
         println("HOSTNAME: $hostname")
 //        val nodes = Array(1) {
 //            InetSocketAddress("192.168.10.54", 1000 + it)
@@ -351,9 +351,11 @@ fun main() {
         }
         delay(1.seconds)
         println("Starting!")
-        val result = (0 until 100).map { i -> submit("") }
-        println("Sent: $test")
-        if (result != result.distinct()) println("No ordering!")
+        if (hostname == "node-1") {
+            val result = (0 until 100).map { i -> submit("") }
+            println("Sent: $test")
+            if (result != result.distinct()) println("No ordering!")
+        }
     }
     println("Done!")
 }
