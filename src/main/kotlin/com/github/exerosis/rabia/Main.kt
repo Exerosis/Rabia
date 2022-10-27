@@ -316,6 +316,7 @@ fun main() {
 //        }
 //        println("Done!")
         val address = getLocalHost()
+        println("localhost: $address")
         val hostname = address.hostName.split('.')[0]
         println("HOSTNAME: $hostname")
 //        val nodes = Array(1) {
