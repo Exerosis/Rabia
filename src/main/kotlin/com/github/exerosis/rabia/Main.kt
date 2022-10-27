@@ -323,6 +323,7 @@ fun main() {
         val address = getLoopbackAddress()
         println("localhost: $address")
         println("HOSTNAME: $hostname")
+        println("This should show up right??")
         val broadcast = InetSocketAddress(BROADCAST, 1000)
         val channel = UDP(address, 5000, 65000)
         val buffer = ByteBuffer.allocateDirect(128)
