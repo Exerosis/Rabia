@@ -324,7 +324,7 @@ fun main() {
         println("localhost: $address")
         println("HOSTNAME: $hostname")
         val broadcast = InetSocketAddress(BROADCAST, 1000)
-        val channel = UDP(address, 5000, 65000)
+        val channel = UDP(address, 1000, 65000)
         val buffer = ByteBuffer.allocateDirect(128)
         buffer.putInt(2).putLong(12L).flip()
         val inbound = ByteBuffer.allocateDirect(128)
