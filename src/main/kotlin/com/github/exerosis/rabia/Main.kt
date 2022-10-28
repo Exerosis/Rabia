@@ -30,7 +30,7 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.nanoseconds
 import kotlin.time.Duration.Companion.seconds
 
-const val BROADCAST = "224.0.0.0" //230
+const val BROADCAST = "224.0.0.1" //230
 const val SIZE = 12
 
 const val OP_PROPOSE = 1L
