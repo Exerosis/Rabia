@@ -196,7 +196,6 @@ fun CoroutineScope.SMR(
                 take().also<Long> { last = it }
             }, {
                 using.add(slot)
-                println("Slot: $slot")
                 slot
             })
         } catch (reason: Throwable) { reason.printStackTrace() } }
@@ -250,7 +249,6 @@ fun CoroutineScope.SMR(
         val channel = UDP(address, port, 65527)
         while (channel.isOpen) {
             channel.receive(buffer.clear())
-            println("Got some data!")
             val id = buffer.flip().long
             val bytes = ByteArray(buffer.int)
             buffer.get(bytes)
@@ -286,11 +284,11 @@ fun main() {
         val address = getByName(current)
         val nodes = arrayOf(InetSocketAddress(other, 1000))
 
-        for (i in 0 until 1) {
+        for (i in 0 until 3) {
             //create a node that takes messages on 1000
             //and runs weak mvc instances on 2000-2002
             var index = 0
-            SMR(2, nodes, address, 1000, 1000 + i, 2000) {
+            SMR(3, nodes, address, 1000, 1000 + i, 2000) {
                 println("${index++}: $it")
             }
         }
