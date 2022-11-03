@@ -347,7 +347,7 @@ fun main() {
             //create a node that takes messages on 1000
             //and runs weak mvc instances on 2000-2002
             var index = 0
-            SMR(3, nodes, address, 1000, 1000 + i, 2000) {
+            SMR(2, nodes, address, 1000, 1000 + i, 2000) {
                 println("${index++}: $it")
             }
         }
