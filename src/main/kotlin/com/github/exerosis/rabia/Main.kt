@@ -110,7 +110,6 @@ suspend fun Node(
             random = Random(current)
             while (index < majority) {
                 channel.receive(buffer.clear())
-                println("Got some data!")
                 proposals[index] = buffer.getLong(0)
                 if (proposals[index] shr 62 == OP_PROPOSE) {
                     val depth = buffer.getInt(8)
