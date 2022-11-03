@@ -284,7 +284,7 @@ fun main() {
         val address = getByName(current)
         val nodes = arrayOf(InetSocketAddress(other, 1000))
 
-        for (i in 0 until 3) {
+        for (i in 0 until 1) {
             //create a node that takes messages on 1000
             //and runs weak mvc instances on 2000-2002
             var index = 0
