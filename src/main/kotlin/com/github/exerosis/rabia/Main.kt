@@ -140,6 +140,7 @@ fun UDP(
     port: Int, size: Int
 ) = DatagramChannel.open(INET).apply {
     val network = NetworkInterface.getByInetAddress(address)
+    println("interface: $network")
     setOption(SO_REUSEADDR, true)
     setOption(IP_MULTICAST_LOOP, true)
     setOption(IP_MULTICAST_IF, network)
