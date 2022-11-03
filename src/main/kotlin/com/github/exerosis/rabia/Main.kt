@@ -280,51 +280,46 @@ fun CoroutineScope.SMR(
 fun main() {
     runBlocking(dispatcher) {
         val hostname = getLocalHost().hostName.split('.')[0]
-        val address = getLocalHost()
-
+        val current = if (hostname == "DESKTOP-NJ3CTN8") "192.168.10.38" else "192.168.10.54"
         val other = if (hostname == "DESKTOP-NJ3CTN8") "192.168.10.54" else "192.168.10.38"
+
+        val address = getByName(current)
         val nodes = arrayOf(InetSocketAddress(other, 1000))
 
+        for (i in 0 until 1) {
+            //create a node that takes messages on 1000
+            //and runs weak mvc instances on 2000-2002
+            var index = 0
+            SMR(2, nodes, address, 1000, 1000 + i, 2000) {
+                println("${index++}: $it")
+            }
+        }
         val broadcast = InetSocketAddress(BROADCAST, 1000)
         val buffer = allocateDirect(64)
         val channel = UDP(address, 1000, 65000)
 
-        channel.send(buffer.putInt(10).flip(), broadcast)
-
-//        for (i in 0 until 1) {
-//            //create a node that takes messages on 1000
-//            //and runs weak mvc instances on 2000-2002
-//            var index = 0
-//            SMR(2, nodes, address, 1000, 1000 + i, 2000) {
-//                println("${index++}: $it")
-//            }
-//        }
-//        val broadcast = InetSocketAddress(BROADCAST, 1000)
-//        val buffer = allocateDirect(64)
-//        val channel = UDP(address, 1000, 65000)
-//
-//        val EPOCH = 1666745204552
-//        var test = 0
-//        fun submit(message: String): Long {
-//            val bytes = message.toByteArray(UTF_8)
-//            val time = now().toEpochMilli() - EPOCH
-//            val random = nextInt().toLong() shl 32
-//            test += bytes.size
-//            test += 8
-//            test += 4
-//            buffer.clear().putLong((time or random) and MASK_MID)
-//            buffer.putInt(bytes.size).put(bytes)
-//            channel.send(buffer.flip(), broadcast)
-//            TESTTEST.add((time or random) and MASK_MID)
-//            return time
-//        }
-//        delay(1.seconds)
-//        println("Starting!")
-//        if (hostname == "DESKTOP-NJ3CTN8") {
-//            val result = (0 until 100).map { i -> submit("") }
-//            println("Sent: $test")
-//            if (result != result.distinct()) println("No ordering!")
-//        }
+        val EPOCH = 1666745204552
+        var test = 0
+        fun submit(message: String): Long {
+            val bytes = message.toByteArray(UTF_8)
+            val time = now().toEpochMilli() - EPOCH
+            val random = nextInt().toLong() shl 32
+            test += bytes.size
+            test += 8
+            test += 4
+            buffer.clear().putLong((time or random) and MASK_MID)
+            buffer.putInt(bytes.size).put(bytes)
+            channel.send(buffer.flip(), broadcast)
+            TESTTEST.add((time or random) and MASK_MID)
+            return time
+        }
+        delay(1.seconds)
+        println("Starting!")
+        if (hostname == "DESKTOP-NJ3CTN8") {
+            val result = (0 until 100).map { i -> submit("") }
+            println("Sent: $test")
+            if (result != result.distinct()) println("No ordering!")
+        }
     }
     println("Done!")
 }
