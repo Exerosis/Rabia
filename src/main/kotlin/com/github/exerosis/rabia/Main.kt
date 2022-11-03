@@ -353,7 +353,7 @@ fun main() {
         }
         val broadcast = InetSocketAddress(BROADCAST, 1000)
         val buffer = allocateDirect(64)
-        val channel = UDP(address, 5000, 65000)
+        val channel = UDP(address, 1000, 65000)
 
         val EPOCH = 1666745204552
         var test = 0
