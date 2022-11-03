@@ -166,7 +166,7 @@ fun CoroutineScope.SMR(
     val using = ConcurrentSkipListSet<Int>()
     val instances = Array(pipes.size) { Node(10, COMPARATOR).apply {
         launch { try {
-            delay(5.seconds)
+//            delay(5.seconds)
             println("Size: $size Full: ${TESTTEST.size}")
             val mark = System.nanoTime()
             var last = -1L; var slot = it
@@ -278,6 +278,7 @@ fun CoroutineScope.SMR(
 fun main() {
     runBlocking(dispatcher) {
         val hostname = getLocalHost().hostName.split('.')[0]
+        println("Hostname: $hostname")
         val current = if (hostname == "DESKTOP-NJ3CTN8") "192.168.10.38" else "192.168.10.54"
         val other = if (hostname == "DESKTOP-NJ3CTN8") "192.168.10.54" else "192.168.10.38"
 
@@ -289,7 +290,7 @@ fun main() {
             //and runs weak mvc instances on 2000-2002
             var index = 0
             SMR(3, nodes, address, 1000, 1000 + i, 2000) {
-                println("${index++}: $it")
+//                println("${index++}: $it")
             }
         }
         val broadcast = InetSocketAddress(BROADCAST, 1000)
