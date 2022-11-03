@@ -112,6 +112,7 @@ suspend fun Node(
             while (index < majority) {
                 channel.receive(buffer.clear())
                 proposals[index] = buffer.getLong(0)
+                println("Countered: ${proposals[index]}")
                 if (proposals[index] shr 62 == OP_PROPOSE) {
                     val depth = buffer.getInt(8)
                     if (current < depth) current = depth
@@ -286,7 +287,7 @@ fun main() {
         val address = getByName(current)
         val nodes = arrayOf(InetSocketAddress(other, 1000))
 
-        for (i in 0 until 1) {
+        for (i in 0 until 2) {
             //create a node that takes messages on 1000
             //and runs weak mvc instances on 2000-2002
             var index = 0
