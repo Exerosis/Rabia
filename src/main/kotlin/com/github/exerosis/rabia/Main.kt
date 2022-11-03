@@ -102,6 +102,7 @@ suspend fun Node(
     outer@ while (channel.isOpen) {
         withTimeout(10.milliseconds) {
             val proposed = OP_PROPOSE shl 62 or messages()
+            println("Proposed: $proposed")
             var current = slot()
             buffer.clear().putLong(proposed).putInt(current)
             channel.send(buffer.flip(), broadcast)
