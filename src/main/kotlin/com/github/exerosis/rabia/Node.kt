@@ -41,14 +41,17 @@ suspend fun Node(
     fun phase(p: Byte, state: Byte, common: Long): Long {
         buffer.clear().put(state or p)
         channel.send(buffer.flip(), broadcast)
+        println("Voted")
         var zero = 0; var one = 0; var lost = 0;
         while ((zero + one) < majority) {
             channel.receive(buffer.clear())
+            println("Polled")
             when (buffer.get(0)) {
                 STATE_ONE or p -> ++one
                 STATE_ZERO or p -> ++zero
             }
         }
+        println("Ok I'm going to state")
         buffer.clear().put(when {
             zero >= majority -> VOTE_ZERO
             one >= majority -> VOTE_ONE
