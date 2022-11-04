@@ -29,7 +29,8 @@ fun main() = runBlocking(dispatcher) {
         //and runs weak mvc instances on 2000-2002
         var index = 0
         SMR(3, nodes, address, 1000, 1000 + i, 2000) {
-                println("${index++}: $it")
+            if ("${index++}" != it) error("IDk why this is happening :D")
+            println("${index}: $it")
         }
     }
     println("Done!")

@@ -38,8 +38,8 @@ fun main() = runBlocking {
     println("Starting!")
     var i = 0
     while (true) {
-        println("${i++}")
-        submit("$i")
+        println("$i")
+        submit("${i++}")
         delay(20.milliseconds)
     }
 }
