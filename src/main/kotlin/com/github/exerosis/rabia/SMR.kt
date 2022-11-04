@@ -31,8 +31,7 @@ fun CoroutineScope.SMR(
     val instances = Array(pipes.size) { Node(10, COMPARATOR).apply {
         launch { try {
 //            delay(5.seconds)
-            println("Size: $size Full: ${TESTTEST.size}")
-            val mark = System.nanoTime()
+            println("Size: $size")
             var last = -1L; var slot = it
             Node(pipes[it], address, n, { depth, id ->
 //                println("$depth - $id != $last")
@@ -55,7 +54,6 @@ fun CoroutineScope.SMR(
                     log[slot] = 0L
                 }
             }, {
-                if (isEmpty()) println("Done in: ${(System.nanoTime() - mark).nanoseconds}")
                 while ((slot - committed.get()) >= log.length()) {}
                 take().also<Long> { last = it }
             }, {
