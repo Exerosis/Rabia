@@ -5,13 +5,12 @@ import com.github.exerosis.mynt.bytes
 import kotlinx.coroutines.*
 import java.net.InetAddress
 import java.net.InetSocketAddress
-import java.nio.ByteBuffer
 import java.nio.channels.AsynchronousChannelGroup
 import java.util.concurrent.*
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLongArray
 import kotlin.math.abs
-import kotlin.time.Duration.Companion.nanoseconds
+import kotlin.text.Charsets.UTF_8
 import kotlin.time.Duration.Companion.seconds
 
 typealias Node = PriorityBlockingQueue<Long>
@@ -106,23 +105,21 @@ fun CoroutineScope.SMR(
         }
     } catch (reason: Throwable) { reason.printStackTrace() } }
     launch { try {
-        var test = 0
-        val buffer = ByteBuffer.allocateDirect(64)
-        val channel = UDP(address, port, 65527)
-        while (channel.isOpen) {
-            channel.receive(buffer.clear())
-            val id = buffer.flip().long
-            val bytes = ByteArray(buffer.int)
-            buffer.get(bytes)
-            messages[id] = bytes.toString(Charsets.UTF_8)
-            if (messages[id] != "${test++}") error("Didn't even get them in order or time.")
-            instances[abs(id % instances.size).toInt()].offer(id)
+        val socket = InetSocketAddress(address, port)
+        while (provider.isOpen && isActive) {
+            provider.accept(socket).apply { launch {
+                while (isActive && isOpen) {
+                    val id = read.long()
+                    messages[id] = read.bytes(read.int()).toString(UTF_8)
+                    instances[abs(id % instances.size).toInt()].offer(id)
+                }; close()
+            } }
         }
     } catch (reason: Throwable) { reason.printStackTrace() } }
     launch { try {
-        val thing = InetSocketAddress(address, tcp)
+        val socket = InetSocketAddress(address, tcp)
         while (provider.isOpen) {
-            provider.accept(thing).apply { launch {
+            provider.accept(socket).apply { launch {
                 val start = read.int()
                 val end = read.int()
                 for (i in start..end) {

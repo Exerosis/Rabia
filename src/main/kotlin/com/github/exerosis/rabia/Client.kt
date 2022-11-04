@@ -1,39 +1,56 @@
 package com.github.exerosis.rabia
 
+import com.github.exerosis.mynt.SocketProvider
+import com.github.exerosis.mynt.base.Connection
+import com.github.exerosis.mynt.base.Write
+import com.github.exerosis.mynt.bytes
+import com.github.exerosis.mynt.component1
+import com.github.exerosis.mynt.component2
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.net.InetAddress
 import java.net.InetAddress.*
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.nio.ByteBuffer.*
+import java.nio.channels.AsynchronousChannelGroup
 import java.time.Instant
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.milliseconds
 
 val EPOCH = 1666745204552
 
-fun main() = runBlocking {
-    val hostname = getLocalHost().hostName.split('.')[0]
-    println("Hostname: $hostname")
-    val current = if (hostname == "DESKTOP-NJ3CTN8") "192.168.10.38" else "192.168.10.54"
-    val address = getByName(current)
+fun main() = runBlocking(dispatcher) {
+    val addresses = arrayOf(
+        InetSocketAddress("192.168.10.38", 1000),
+        InetSocketAddress("192.168.10.54", 1000),
+        InetSocketAddress("192.168.10.54", 1001),
+    )
+    val group = AsynchronousChannelGroup.withThreadPool(executor)
+    val provider = SocketProvider(65536, group)
+    val connections = addresses.map {
+        Channel<suspend Connection.() -> (Unit)>().apply {
+            val connection = provider.connect(it)
+            launch { consumeEach { it(connection) } }
+        }
+    }
 
-    val broadcast = InetSocketAddress(BROADCAST, 1000)
-    val buffer = allocateDirect(64)
-    val channel = UDP(address, 1000, 65000)
     var test = 0
-    fun submit(message: String): Long {
+    suspend fun submit(message: String) {
         val bytes = message.toByteArray(Charsets.UTF_8)
         val time = Instant.now().toEpochMilli() - EPOCH
         val random = Random.nextInt().toLong() shl 32
         test += bytes.size
         test += 8
         test += 4
-        buffer.clear().putLong((time or random) and MASK_MID)
-        buffer.putInt(bytes.size).put(bytes)
-        channel.send(buffer.flip(), broadcast)
-        return time
+        connections.forEach { it.trySend {
+            write.long((time or random) and MASK_MID)
+            write.int(bytes.size); write.bytes(bytes)
+        } }
     }
     println("Starting!")
     var i = 0
