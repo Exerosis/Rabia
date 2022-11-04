@@ -14,9 +14,14 @@ import kotlin.time.Duration.Companion.milliseconds
 val EPOCH = 1666745204552
 
 fun main() = runBlocking {
+    val hostname = getLocalHost().hostName.split('.')[0]
+    println("Hostname: $hostname")
+    val current = if (hostname == "DESKTOP-NJ3CTN8") "192.168.10.38" else "192.168.10.54"
+    val address = getByName(current)
+
     val broadcast = InetSocketAddress(BROADCAST, 1000)
     val buffer = allocateDirect(64)
-    val channel = UDP(getLocalHost(), 1000, 65000)
+    val channel = UDP(address, 1000, 65000)
     var test = 0
     fun submit(message: String): Long {
         val bytes = message.toByteArray(Charsets.UTF_8)
@@ -33,7 +38,8 @@ fun main() = runBlocking {
     println("Starting!")
     var i = 0
     while (true) {
-        submit("${i++}")
+        println("${i++}")
+        submit("$i")
         delay(20.milliseconds)
     }
 }

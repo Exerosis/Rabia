@@ -30,12 +30,10 @@ fun CoroutineScope.SMR(
     val using = ConcurrentSkipListSet<Int>()
     val instances = Array(pipes.size) { Node(10, COMPARATOR).apply {
         launch { try {
-//            delay(5.seconds)
-            println("Size: $size")
             var last = -1L; var slot = it
             Node(pipes[it], address, n, { depth, id ->
 //                println("$depth - $id != $last")
-                println("Depth: $depth Pipe: $it")
+                println("Depth: $depth Id: $id - ${messages[id]}")
                 if (id != last)
                     println("Slightly out of sync!")
                 if (id == 0L) { error("Trying to erase!") }
@@ -54,6 +52,7 @@ fun CoroutineScope.SMR(
                     log[slot] = 0L
                 }
             }, {
+                println("Size: $size")
                 while ((slot - committed.get()) >= log.length()) {}
                 take().also<Long> { last = it }
             }, {
