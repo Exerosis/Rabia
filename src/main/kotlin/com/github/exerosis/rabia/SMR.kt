@@ -52,7 +52,6 @@ fun CoroutineScope.SMR(
                 }
             }, {
                 println("Size: $size")
-                while (true) {}
                 while ((slot - committed.get()) >= log.length()) {}
                 take().also<Long> { last = it }
             }, {
