@@ -96,6 +96,7 @@ suspend fun Node(
                         if (proposals[i] == proposals[index]) {
                             if (++count >= majority) {
                                 val state = if (proposals[i] == proposed) STATE_ONE else STATE_ZERO
+                                println("Ok I'm going to vote!")
                                 commit(current, phase(0, state, proposals[i])); return@withTimeout
                                 //continue@outer
                             }
