@@ -26,14 +26,14 @@ val EPOCH = 1666745204552
 
 fun main() = runBlocking(dispatcher) {
     val addresses = arrayOf(
-        InetSocketAddress("192.168.10.38", 1000),
+//        InetSocketAddress("192.168.10.38", 1000),
         InetSocketAddress("192.168.10.54", 1000),
         InetSocketAddress("192.168.10.54", 1001),
     )
     val group = AsynchronousChannelGroup.withThreadPool(executor)
     val provider = SocketProvider(65536, group)
     val connections = addresses.map {
-        Channel<suspend Connection.() -> (Unit)>().apply {
+        Channel<suspend Connection.() -> (Unit)>(10).apply {
             val connection = provider.connect(it)
             launch { consumeEach { it(connection) } }
         }
@@ -47,7 +47,7 @@ fun main() = runBlocking(dispatcher) {
         test += bytes.size
         test += 8
         test += 4
-        connections.forEach { it.trySend {
+        connections.forEach { it.send {
             write.long((time or random) and MASK_MID)
             write.int(bytes.size); write.bytes(bytes)
         } }
