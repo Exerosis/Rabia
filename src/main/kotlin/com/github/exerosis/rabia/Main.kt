@@ -15,8 +15,9 @@ val dispatcher = executor.asCoroutineDispatcher()
 fun main() = runBlocking(dispatcher) {
     val hostname = getLocalHost().hostName.split('.')[0]
     println("Hostname: $hostname")
-    val current = if (hostname == "DESKTOP-NJ3CTN8") "192.168.10.38" else "192.168.10.54"
-    val other = if (hostname == "DESKTOP-NJ3CTN8") "192.168.10.54" else "192.168.10.38"
+    val main = hostname == "DESKTOP-NJ3CTN8"
+    val current =  if (main) "192.168.10.38" else "192.168.10.54"
+    val other = if (main) "192.168.10.54" else "192.168.10.38"
 
     val address = getByName(current)
     val nodes = arrayOf(InetSocketAddress(other, 1000))
@@ -24,7 +25,7 @@ fun main() = runBlocking(dispatcher) {
     val network = NetworkInterface.getByInetAddress(address)
     println("Interface: $network")
 
-    for (i in 0 until 2) {
+    for (i in 0 until (if (main) 1 else 2)) {
         //create a node that takes messages on 1000
         //and runs weak mvc instances on 2000-2002
         var index = 0
