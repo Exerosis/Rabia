@@ -24,7 +24,7 @@ fun main() = runBlocking(dispatcher) {
     val network = NetworkInterface.getByInetAddress(address)
     println("Interface: $network")
 
-    for (i in 0 until 1) {
+    for (i in 0 until 2) {
         //create a node that takes messages on 1000
         //and runs weak mvc instances on 2000-2002
         var index = 0
