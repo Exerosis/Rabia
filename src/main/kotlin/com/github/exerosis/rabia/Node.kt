@@ -45,8 +45,9 @@ suspend fun Node(
         var zero = 0; var one = 0; var lost = 0;
         while ((zero + one) < majority) {
             channel.receive(buffer.clear())
-            println("Polled")
-            when (buffer.get(0)) {
+            val test =  buffer.get(0)
+            println("Polled: $test")
+            when (test) {
                 STATE_ONE or p -> ++one
                 STATE_ZERO or p -> ++zero
             }
@@ -58,11 +59,14 @@ suspend fun Node(
             else -> VOTE_LOST
         } or p)
         channel.send(buffer.flip(), broadcast)
+        println("State")
         zero = 0; one = 0
         //TODO can we reduce the amount we wait for here.
         while ((zero + one + lost) < (n - f)) {
             channel.receive(buffer.clear())
-            when (buffer.get(0)) {
+            val test = buffer.get(0)
+            println("Stated: $test")
+            when (test) {
                 VOTE_ONE or p -> ++one
                 VOTE_ZERO or p -> ++zero
                 VOTE_LOST or p -> ++lost
