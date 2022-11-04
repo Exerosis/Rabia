@@ -106,6 +106,7 @@ fun CoroutineScope.SMR(
         }
     } catch (reason: Throwable) { reason.printStackTrace() } }
     launch { try {
+        var test = 0
         val buffer = ByteBuffer.allocateDirect(64)
         val channel = UDP(address, port, 65527)
         while (channel.isOpen) {
@@ -114,6 +115,7 @@ fun CoroutineScope.SMR(
             val bytes = ByteArray(buffer.int)
             buffer.get(bytes)
             messages[id] = bytes.toString(Charsets.UTF_8)
+            if (messages[id] != "${test++}") error("Didn't even get them in order or time.")
             instances[abs(id % instances.size).toInt()].offer(id)
         }
     } catch (reason: Throwable) { reason.printStackTrace() } }
