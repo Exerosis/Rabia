@@ -4,7 +4,6 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import java.net.InetAddress
 import java.net.InetSocketAddress
-import java.nio.ByteBuffer
 import java.nio.ByteBuffer.*
 import kotlin.experimental.or
 import kotlin.random.Random
@@ -31,23 +30,27 @@ suspend fun Node(
     slot: suspend () -> (Int),
 ) = withContext(dispatcher) {
     val f = (n / 2) - 1
-    val channel = UDP(address, port,  65527)
+    val propose = UDP(address, port,  65527)
+    val states = UDP(address, port + 1,  65527)
+    val vote = UDP(address, port + 2,  65527)
     val broadcast = InetSocketAddress(BROADCAST, port)
     val buffer = allocateDirect(12)
     val majority = (n / 2) + 1
     val proposals = LongArray(majority)
     var random = Random(0)
     println("N: $n F: $f Majority: $majority")
-    fun phase(p: Byte, state: Byte, common: Long): Long {
-        buffer.clear().put(state or p)
-        channel.send(buffer.flip(), broadcast)
+    fun phase(p: Byte, state: Byte, common: Long, slot: Int): Long {
+        buffer.clear().put(state or p).putInt(slot)
+        states.send(buffer.flip(), broadcast)
         println("Voted")
         var zero = 0; var one = 0; var lost = 0;
         while ((zero + one) < majority) {
-            channel.receive(buffer.clear())
-            val test =  buffer.get(0)
-            println("Polled: $test")
-            when (test) {
+            states.receive(buffer.clear())
+            val op = buffer.get(0)
+            println("Polled: $op")
+            if (buffer.int != slot)
+                println("Got out of phase state!")
+            else when (op) {
                 STATE_ONE or p -> ++one
                 STATE_ZERO or p -> ++zero
             }
@@ -57,16 +60,18 @@ suspend fun Node(
             zero >= majority -> VOTE_ZERO
             one >= majority -> VOTE_ONE
             else -> VOTE_LOST
-        } or p)
-        channel.send(buffer.flip(), broadcast)
+        } or p).putInt(slot)
+        vote.send(buffer.flip(), broadcast)
         println("State")
         zero = 0; one = 0
         //TODO can we reduce the amount we wait for here.
-        while ((zero + one + lost) < (n - f)) {
-            channel.receive(buffer.clear())
-            val test = buffer.get(0)
-            println("Stated: $test")
-            when (test) {
+        while ((zero + one + lost) < majority) {
+            vote.receive(buffer.clear())
+            val op = buffer.get(0)
+            println("Stated: $op")
+            if (buffer.int != slot)
+                println("Got out of phase vote!")
+            else when (op) {
                 VOTE_ONE or p -> ++one
                 VOTE_ZERO or p -> ++zero
                 VOTE_LOST or p -> ++lost
@@ -79,20 +84,20 @@ suspend fun Node(
             one > 0 -> STATE_ONE
             else -> if (random.nextBoolean())
                 STATE_ZERO else STATE_ONE
-        }, common)
+        }, common, slot)
     }
-    outer@ while (channel.isOpen) {
+    outer@ while (propose.isOpen) {
         withTimeout(10.milliseconds) {
             val proposed = OP_PROPOSE shl 62 or messages()
             println("Proposed: $proposed")
             var current = slot()
             buffer.clear().putLong(proposed).putInt(current)
-            channel.send(buffer.flip(), broadcast)
+            propose.send(buffer.flip(), broadcast)
             var index = 0
             //create this lazily
             random = Random(current)
             while (index < majority) {
-                channel.receive(buffer.clear())
+                propose.receive(buffer.clear())
                 proposals[index] = buffer.getLong(0)
                 println("Countered: ${proposals[index]}")
                 if (proposals[index] shr 62 == OP_PROPOSE) {
@@ -104,7 +109,7 @@ suspend fun Node(
                             if (++count >= majority) {
                                 val state = if (proposals[i] == proposed) STATE_ONE else STATE_ZERO
                                 println("Ok I'm going to vote!")
-                                commit(current, phase(0, state, proposals[i])); return@withTimeout
+                                commit(current, phase(0, state, proposals[i], current)); return@withTimeout
                                 //continue@outer
                             }
                         }
@@ -112,7 +117,7 @@ suspend fun Node(
                     ++index;
                 }
             }
-            commit(current, phase(0, STATE_ZERO, -1))
+            commit(current, phase(0, STATE_ZERO, -1, current))
         }
 //        delay(1.milliseconds)
     }
