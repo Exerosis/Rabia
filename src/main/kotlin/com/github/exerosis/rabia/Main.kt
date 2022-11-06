@@ -13,6 +13,16 @@ import kotlin.time.Duration.Companion.seconds
 val executor: ExecutorService = Executors.newCachedThreadPool()
 val dispatcher = executor.asCoroutineDispatcher()
 
+const val DEBUG = true
+suspend fun log(message: String) {
+    val ctx = currentCoroutineContext()[CoroutineName]
+    if (DEBUG) {
+        println("[${ctx?.name}] $message")
+        System.out.flush()
+    }
+}
+
+
 fun main() = runBlocking(dispatcher) {
     val hostname = getLocalHost().hostName.split('.')[0]
     println("Hostname: $hostname")
@@ -34,7 +44,7 @@ fun main() = runBlocking(dispatcher) {
         SMR(4, nodes, address, 1000 + i, 2000 + (i * 4), 3000) {
             processed.incrementAndGet()
 //            if ("$index" != it) error("IDk why this is happening :D")
-//            println("${index++}: $it")
+            println("${index++}: $it")
         }
 
         launch {

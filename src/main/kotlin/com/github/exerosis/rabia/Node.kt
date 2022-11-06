@@ -24,16 +24,6 @@ const val VOTE_LOST = (OP_LOST shl 6).toByte()
 
 const val MASK_MID = (0b11L shl 62).inv()
 
-const val DEBUG = false
-
-suspend fun log(message: String) {
-    val ctx = currentCoroutineContext()[CoroutineName]
-    if (DEBUG) {
-        println("[${ctx?.name}] $message")
-        System.out.flush()
-    }
-}
-
 suspend fun Node(
     port: Int, address: InetAddress, n: Int,
     commit: suspend (Int, Long) -> (Unit),
