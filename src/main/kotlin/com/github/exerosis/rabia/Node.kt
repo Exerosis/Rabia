@@ -106,8 +106,14 @@ suspend fun Node(
                 log("Countered: ${proposals[index]}")
                 if (proposals[index] shr 62 == OP_PROPOSE) {
                     val depth = buffer.getInt(8)
-                    if (depth < current) continue
-                    if (current < depth) current = depth
+                    if (depth < current) {
+                        log("Skipped a proposal!")
+                        continue
+                    }
+                    if (current < depth) {
+                        println("Might have accepted an earlier proposal that should have been dropped")
+                        current = depth
+                    }
                     var count = 1
                     for (i in 0 until index) {
                         if (proposals[i] == proposals[index]) {
