@@ -39,8 +39,9 @@ fun main() = runBlocking(dispatcher) {
 
         launch {
             while (isActive) {
-                println("Operations: ${processed.getAndSet(0) / 30.0}/s")
-                delay(30.seconds)
+                val count = processed.getAndSet(0)
+                println("Operations: $count - ${count / 15.0}/s")
+                delay(15.seconds)
             }
         }
     }
