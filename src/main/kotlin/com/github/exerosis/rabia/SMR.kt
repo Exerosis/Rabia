@@ -28,7 +28,7 @@ fun CoroutineScope.SMR(
     val highest = AtomicInteger(-1)
     val using = ConcurrentSkipListSet<Int>()
     val instances = Array(pipes.size) { Node(10, COMPARATOR).apply {
-        launch { try {
+        launch(CoroutineName("Node-${port - 1000}")) { try {
             var last = -1L; var slot = it
             Node(pipes[it], address, n, { depth, id ->
 //                println("$depth - $id != $last")
@@ -51,7 +51,7 @@ fun CoroutineScope.SMR(
                     log[slot] = 0L
                 }
             }, {
-                println("Size: $size")
+                log("Size: $size")
                 while ((slot - committed.get()) >= log.length()) {}
                 take().also<Long> { last = it }
             }, {

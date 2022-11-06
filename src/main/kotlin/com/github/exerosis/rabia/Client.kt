@@ -21,6 +21,7 @@ import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 val EPOCH = 1666745204552
 
@@ -28,9 +29,13 @@ fun main() = runBlocking(dispatcher) {
     val addresses = arrayOf(
         InetSocketAddress("192.168.10.38", 1000),
         InetSocketAddress("192.168.10.38", 1001),
-        InetSocketAddress("192.168.10.54", 1000),
-        InetSocketAddress("192.168.10.54", 1001),
-        InetSocketAddress("192.168.10.54", 1002),
+        InetSocketAddress("192.168.10.38", 1002),
+//        InetSocketAddress("192.168.10.38", 1003),
+//        InetSocketAddress("192.168.10.38", 1004),
+
+//        InetSocketAddress("192.168.10.54", 1000),
+//        InetSocketAddress("192.168.10.54", 1001),
+//        InetSocketAddress("192.168.10.54", 1002),
     )
     val group = AsynchronousChannelGroup.withThreadPool(executor)
     val provider = SocketProvider(65536, group)

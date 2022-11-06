@@ -23,16 +23,15 @@ fun main() = runBlocking(dispatcher) {
     val nodes = arrayOf(InetSocketAddress(other, 1000))
 
     val network = NetworkInterface.getByInetAddress(address)
-    println("Interface: $network")
+    println("Interface: ${network.name}")
 
-    for (i in 0 until (if (main) 2 else 3)) {
+    for (i in 0 until 3) { //(if (main) 2 else 3)
         //create a node that takes messages on 1000
         //and runs weak mvc instances on 2000-2002
         var index = 0
-        SMR(5, nodes, address, 1000 + i, 2000 + (i * 4), 3000) {
+        SMR(3, nodes, address, 1000 + i, 2000 + (i * 4), 3000) {
             if ("$index" != it) error("IDk why this is happening :D")
             println("${index++}: $it")
         }
     }
-    println("Done!")
 }
