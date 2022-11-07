@@ -90,4 +90,4 @@ fun test2() = runBlocking(dispatcher) {
     }
 }
 
-fun main() = test()
+fun main() = test2()
