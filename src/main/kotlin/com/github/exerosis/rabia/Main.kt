@@ -27,14 +27,14 @@ fun main() = runBlocking(dispatcher) {
     val hostname = getLocalHost().hostName.split('.')[0]
     println("Hostname: $hostname")
     val main = hostname == "DESKTOP-NJ3CTN8"
-    val current =  if (main) "192.168.10.38" else "192.168.10.254"
-    val other = if (main) "192.168.10.254" else "192.168.10.38"
+    val current =  if (main) "192.168.10.38" else "192.168.10.54"
+    val other = if (main) "192.168.10.54" else "192.168.10.38"
 
     val address = getByName(current)
     val nodes = arrayOf(InetSocketAddress(other, 1000))
 
     val network = NetworkInterface.getByInetAddress(address)
-    println("Interface: ${network.name}")
+    println("Interface: ${network.displayName}")
 
     for (i in 0 until (if (main) 2 else 2)) { //(if (main) 2 else 3)
         //create a node that takes messages on 1000
