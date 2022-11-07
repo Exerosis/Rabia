@@ -60,6 +60,7 @@ suspend fun log(message: String) {
 fun main() = test()
 fun test() = runBlocking(dispatcher) {
     val address = getLocalHost()
+    println(address)
     val channel = UDP(address, 1000, 1000)
     launch {
         val buffer = ByteBuffer.allocateDirect(12)
