@@ -57,7 +57,7 @@ fun run() = runBlocking(dispatcher) {
     }
 }
 fun test() = runBlocking(dispatcher) {
-    val address = getByName("10.0.0.154")
+    val address = getByName("10.0.2.15")
     println(address)
     val channel = UDP(address, 1000, 1000)
     launch {
