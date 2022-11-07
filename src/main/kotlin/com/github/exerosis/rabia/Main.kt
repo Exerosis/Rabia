@@ -74,26 +74,25 @@ fun test2() = runBlocking(dispatcher) {
     val hostname = getLocalHost().hostName.split('.')[0]
     println("Hostname: $hostname")
     val main = hostname == "DESKTOP-NJ3CTN8"
-    val current =  if (main) "192.168.10.38" else "192.168.10.254"
+    val current =  if (main) "192.168.10.38" else "192.168.10.54"
     val address = getByName(current)
     println(address)
-
+    val channel = UDP(address, 2000, 65000)
     if (main) {
+        val buffer = ByteBuffer.allocateDirect(12)
         while (isActive) {
-            val channel = UDP(address, 2000, 65000)
-            val buffer = ByteBuffer.allocateDirect(12)
-            println("reading")
-            channel.receive(buffer)
+            println("Type something")
+            readln()
+            channel.receive(buffer.clear())
             println("Got data!")
         }
     } else {
         while (isActive) {
-            val channel = UDP(address, 2000, 65000)
             val buffer = ByteBuffer.allocateDirect(12)
             buffer.putInt(10).putLong(15L).flip()
             channel.send(buffer, InetSocketAddress(BROADCAST, 2000))
             println("Sent!")
-            delay(1.seconds)
+            delay(5.seconds)
         }
     }
 }
