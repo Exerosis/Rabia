@@ -89,9 +89,9 @@ fun test2() = runBlocking(dispatcher) {
             val buffer = ByteBuffer.allocateDirect(12)
             buffer.putInt(10).putLong(15L).flip()
             channel.send(buffer, InetSocketAddress(BROADCAST, 2000))
+            println("Sent!")
             delay(1.seconds)
         }
-        println("Sent!")
     }
 }
 
