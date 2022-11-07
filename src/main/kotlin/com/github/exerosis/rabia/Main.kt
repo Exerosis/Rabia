@@ -76,7 +76,7 @@ fun test2() = runBlocking(dispatcher) {
     val current =  if (main) "192.168.10.38" else "192.168.10.254"
     val address = getByName(current)
     println(address)
-    val channel = UDP(address, 1000, 1000)
+    val channel = UDP(address, 2000, 65000)
     if (main) {
         val buffer = ByteBuffer.allocateDirect(12)
         channel.receive(buffer)
@@ -84,9 +84,9 @@ fun test2() = runBlocking(dispatcher) {
     } else {
         val buffer = ByteBuffer.allocateDirect(12)
         buffer.putInt(10).putLong(15L).flip()
-        channel.send(buffer, InetSocketAddress(BROADCAST, 1000))
+        channel.send(buffer, InetSocketAddress(BROADCAST, 2000))
         println("Sent!")
     }
 }
 
-fun main() = run()
+fun main() = test2()
