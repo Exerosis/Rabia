@@ -59,7 +59,7 @@ suspend fun log(message: String) {
 
 fun main() = test()
 fun test() = runBlocking(dispatcher) {
-    val address = getLocalHost()
+    val address = getByName("192.168.10.254")
     println(address)
     val channel = UDP(address, 1000, 1000)
     launch {
