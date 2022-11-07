@@ -9,7 +9,6 @@ import java.nio.ByteBuffer
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
-import kotlin.time.Duration.Companion.seconds
 
 val executor: ExecutorService = Executors.newCachedThreadPool()
 val dispatcher = executor.asCoroutineDispatcher()
@@ -27,8 +26,8 @@ fun run() = runBlocking(dispatcher) {
     val hostname = getLocalHost().hostName.split('.')[0]
     println("Hostname: $hostname")
     val main = hostname == "DESKTOP-NJ3CTN8"
-    val current =  if (main) "192.168.10.38" else "192.168.10.54"
-    val other = if (main) "192.168.10.54" else "192.168.10.38"
+    val current =  if (main) "192.168.10.38" else "192.168.10.254"
+    val other = if (main) "192.168.10.254" else "192.168.10.38"
 
     val address = getByName(current)
     val nodes = arrayOf(InetSocketAddress(other, 1000))
@@ -47,13 +46,13 @@ fun run() = runBlocking(dispatcher) {
             println("${index++}: $it")
         }
 
-        launch {
-            while (isActive) {
-                val count = processed.getAndSet(0)
-                println("Operations: $count - ${count / 15.0}/s")
-                delay(15.seconds)
-            }
-        }
+//        launch {
+//            while (isActive) {
+//                val count = processed.getAndSet(0)
+//                println("Operations: $count - ${count / 15.0}/s")
+//                delay(15.seconds)
+//            }
+//        }
     }
 }
 fun test() = runBlocking(dispatcher) {
@@ -90,4 +89,4 @@ fun test2() = runBlocking(dispatcher) {
     }
 }
 
-fun main() = test2()
+fun main() = run()
