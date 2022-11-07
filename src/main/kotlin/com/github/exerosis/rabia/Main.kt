@@ -9,6 +9,7 @@ import java.nio.ByteBuffer
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.time.Duration.Companion.seconds
 
 val executor: ExecutorService = Executors.newCachedThreadPool()
 val dispatcher = executor.asCoroutineDispatcher()
@@ -78,13 +79,18 @@ fun test2() = runBlocking(dispatcher) {
     println(address)
     val channel = UDP(address, 2000, 65000)
     if (main) {
-        val buffer = ByteBuffer.allocateDirect(12)
-        channel.receive(buffer)
-        println("Got data!")
+        while (isActive) {
+            val buffer = ByteBuffer.allocateDirect(12)
+            channel.receive(buffer)
+            println("Got data!")
+        }
     } else {
-        val buffer = ByteBuffer.allocateDirect(12)
-        buffer.putInt(10).putLong(15L).flip()
-        channel.send(buffer, InetSocketAddress(BROADCAST, 2000))
+        while (isActive) {
+            val buffer = ByteBuffer.allocateDirect(12)
+            buffer.putInt(10).putLong(15L).flip()
+            channel.send(buffer, InetSocketAddress(BROADCAST, 2000))
+            delay(1.seconds)
+        }
         println("Sent!")
     }
 }
