@@ -14,7 +14,7 @@ import kotlin.time.Duration.Companion.seconds
 val executor: ExecutorService = Executors.newCachedThreadPool()
 val dispatcher = executor.asCoroutineDispatcher()
 
-const val DEBUG = true
+const val DEBUG = false
 suspend fun log(message: String) {
     val ctx = currentCoroutineContext()[CoroutineName]
     if (DEBUG) {
