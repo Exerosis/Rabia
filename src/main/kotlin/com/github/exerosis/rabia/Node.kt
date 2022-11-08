@@ -79,7 +79,7 @@ suspend fun Node(
                 VOTE_LOST or p -> ++lost
             }
         }
-        if (lost == 0)
+        log("Lost: $lost")
         return if (zero >= f + 1) -1
         else if (one >= f + 1) common and MASK_MID
         else phase((p + 1).toByte(), when {
