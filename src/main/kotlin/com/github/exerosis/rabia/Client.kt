@@ -12,7 +12,7 @@ import java.net.InetSocketAddress
 import java.nio.channels.AsynchronousChannelGroup
 import java.time.Instant
 import kotlin.random.Random
-import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 val EPOCH = 1666745204552
 
@@ -55,6 +55,6 @@ fun main() = runBlocking(dispatcher) {
     while (true) {
         println("$i")
         submit("${i++}")
-        delay(20.milliseconds)
+        delay(2.seconds)
     }
 }

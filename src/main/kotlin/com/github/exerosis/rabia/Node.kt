@@ -1,11 +1,9 @@
 package com.github.exerosis.rabia
 
-import kotlinx.coroutines.CoroutineName
-import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.withTimeout
 import java.net.InetAddress
 import java.net.InetSocketAddress
-import java.nio.ByteBuffer.*
+import java.nio.ByteBuffer.allocateDirect
 import kotlin.experimental.or
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.milliseconds
@@ -81,6 +79,7 @@ suspend fun Node(
                 VOTE_LOST or p -> ++lost
             }
         }
+        if (lost == 0)
         return if (zero >= f + 1) -1
         else if (one >= f + 1) common and MASK_MID
         else phase((p + 1).toByte(), when {
@@ -103,13 +102,10 @@ suspend fun Node(
             while (index < majority) {
                 proposes.receive(buffer.clear())
                 proposals[index] = buffer.getLong(0)
-                log("Countered: ${proposals[index]}")
                 if (proposals[index] shr 62 == OP_PROPOSE) {
                     val depth = buffer.getInt(8)
-                    if (depth < current) {
-                        log("Skipped a proposal!")
-                        continue
-                    }
+                    if (depth < current) continue
+                    log("Countered: ${proposals[index]}")
                     if (current < depth) {
                         println("Might have accepted an earlier proposal that should have been dropped")
                         current = depth
