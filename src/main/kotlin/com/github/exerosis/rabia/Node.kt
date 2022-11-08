@@ -55,7 +55,7 @@ suspend fun Node(
             if (depth == slot) when (op) {
                 STATE_ONE or p -> ++one
                 STATE_ZERO or p -> ++zero
-            }
+            } else println("here's the problem")
         }
         val vote = when {
             zero >= majority -> VOTE_ZERO
@@ -85,8 +85,11 @@ suspend fun Node(
         else phase((p + 1).toByte(), when {
             zero > 0 -> STATE_ZERO
             one > 0 -> STATE_ONE
-            else -> if (random.nextBoolean())
-                STATE_ZERO else STATE_ONE
+            else -> {
+                println("ROLLIN THE DICE!")
+                if (random.nextBoolean())
+                    STATE_ZERO else STATE_ONE
+            }
         }, common, slot)
     }
     outer@ while (proposes.isOpen) {

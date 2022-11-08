@@ -18,15 +18,15 @@ val EPOCH = 1666745204552
 
 fun main() = runBlocking(dispatcher) {
     val addresses = arrayOf(
-        InetSocketAddress("192.168.10.38", 1000),
-        InetSocketAddress("192.168.10.38", 1001),
-//        InetSocketAddress("192.168.10.38", 1002),
-//        InetSocketAddress("192.168.10.38", 1003),
-//        InetSocketAddress("192.168.10.38", 1004),
+        InetSocketAddress(current(), 1000),
+        InetSocketAddress(current(), 1001),
+//        InetSocketAddress(current(), 1002),
+//        InetSocketAddress(current(), 1003),
+//        InetSocketAddress(current(), 1004),
 
-        InetSocketAddress("192.168.10.54", 1000),
-        InetSocketAddress("192.168.10.54", 1001),
-//        InetSocketAddress("192.168.10.54", 1002),
+        InetSocketAddress(other(), 1000),
+        InetSocketAddress(other(), 1001),
+//        InetSocketAddress(other(), 1002),
     )
     val group = AsynchronousChannelGroup.withThreadPool(executor)
     val provider = SocketProvider(65536, group)
@@ -55,6 +55,6 @@ fun main() = runBlocking(dispatcher) {
     while (true) {
         println("$i")
         submit("${i++}")
-        delay(2.seconds)
+        delay(.5.seconds)
     }
 }
