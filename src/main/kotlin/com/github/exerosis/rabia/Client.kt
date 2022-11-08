@@ -2,26 +2,17 @@ package com.github.exerosis.rabia
 
 import com.github.exerosis.mynt.SocketProvider
 import com.github.exerosis.mynt.base.Connection
-import com.github.exerosis.mynt.base.Write
 import com.github.exerosis.mynt.bytes
-import com.github.exerosis.mynt.component1
-import com.github.exerosis.mynt.component2
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import java.net.InetAddress
-import java.net.InetAddress.*
 import java.net.InetSocketAddress
-import java.nio.ByteBuffer
-import java.nio.ByteBuffer.*
 import java.nio.channels.AsynchronousChannelGroup
 import java.time.Instant
-import java.util.concurrent.ConcurrentHashMap
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.seconds
 
 val EPOCH = 1666745204552
 
@@ -33,8 +24,8 @@ fun main() = runBlocking(dispatcher) {
 //        InetSocketAddress("192.168.10.38", 1003),
 //        InetSocketAddress("192.168.10.38", 1004),
 
-        InetSocketAddress("192.168.10.254", 1000),
-        InetSocketAddress("192.168.10.254", 1001),
+        InetSocketAddress("192.168.10.54", 1000),
+        InetSocketAddress("192.168.10.54", 1001),
 //        InetSocketAddress("192.168.10.54", 1002),
     )
     val group = AsynchronousChannelGroup.withThreadPool(executor)

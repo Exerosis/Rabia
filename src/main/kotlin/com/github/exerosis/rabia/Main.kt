@@ -27,8 +27,8 @@ fun run() = runBlocking(dispatcher) {
     val hostname = getLocalHost().hostName.split('.')[0]
     println("Hostname: $hostname")
     val main = hostname == "DESKTOP-NJ3CTN8"
-    val current =  if (main) "192.168.10.38" else "192.168.10.254"
-    val other = if (main) "192.168.10.254" else "192.168.10.38"
+    val current =  if (main) "192.168.10.38" else "192.168.10.54"
+    val other = if (main) "192.168.10.54" else "192.168.10.38"
 
     val address = getByName(current)
     val nodes = arrayOf(InetSocketAddress(other, 1000))
@@ -97,4 +97,4 @@ fun test2() = runBlocking(dispatcher) {
     }
 }
 
-fun main() = test2()
+fun main() = run()
