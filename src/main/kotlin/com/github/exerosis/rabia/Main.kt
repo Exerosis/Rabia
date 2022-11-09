@@ -40,7 +40,8 @@ fun other() = if (SERVER) when (hostname) {
 
 fun run() = runBlocking(dispatcher) {
     println("Hostname: $hostname")
-
+    println("Current: ${current()}")
+    println("Other: ${other()}")
     val address = getByName(current())
     val nodes = arrayOf(InetSocketAddress(other(), 1000))
 
