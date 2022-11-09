@@ -11,32 +11,8 @@ import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.time.Duration.Companion.seconds
 
-val executor: ExecutorService = Executors.newCachedThreadPool()
-val dispatcher = executor.asCoroutineDispatcher()
-
 const val DEBUG = true
-suspend fun log(message: String) {
-    val ctx = currentCoroutineContext()[CoroutineName]
-    if (DEBUG) {
-        println("[${ctx?.name}] $message")
-        System.out.flush()
-    }
-}
-
-val hostname = getLocalHost().hostName.split('.')[0]
-val SERVER = true
-fun current() = when (hostname) {
-    "DESKTOP-NJ3CTN8" -> "192.168.10.38"
-    "exerosis-server" -> "192.168.10.254"
-    else -> "192.168.10.54"
-}
-fun other() = if (SERVER) when (hostname) {
-    "exerosis-server" -> "192.168.10.38"
-    else -> "192.168.10.254"
-} else when (hostname) {
-    "DESKTOP-NJ3CTN8" -> "192.168.10.54"
-    else -> "192.168.10.38"
-}
+const val SERVER = true
 
 fun run() = runBlocking(dispatcher) {
     println("Hostname: $hostname")
