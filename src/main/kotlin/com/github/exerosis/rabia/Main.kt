@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import kotlin.time.Duration.Companion.seconds
 
 const val DEBUG = true
-const val SERVER = true
+const val SERVER = false
 
 fun run() = runBlocking(dispatcher) {
     println("Hostname: $hostname")
