@@ -55,6 +55,6 @@ fun main() = runBlocking(dispatcher) {
     while (true) {
         println("$i")
         submit("${i++}")
-        delay(.5.seconds)
+        delay(.25.seconds)
     }
 }
