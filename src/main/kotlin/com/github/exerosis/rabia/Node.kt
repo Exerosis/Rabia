@@ -77,6 +77,7 @@ suspend fun Node(
                 VOTE_LOST or p -> ++lost
             }
         }
+        log("End Phase: $p - $slot")
         return if (zero >= f + 1) -1
         else if (one >= f + 1) common and MASK_MID
         else phase((p + 1).toByte(), when {
