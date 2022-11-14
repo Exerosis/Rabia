@@ -43,10 +43,10 @@ suspend fun Node(
         states.send(buffer.flip())
         log("Sent State: ${state or p} - $slot")
         var zero = 0; var one = 0; var lost = 0
-        while ((zero + one) < majority) {
+        while (zero + one < majority) {
             states.receive(buffer.clear())
             val op = buffer.get(0)
-            log("Got State: $op - $slot")
+            log("Got State ${zero + one}: $op - $slot")
             val depth = buffer.getInt(1)
             if (depth > slot) error("State Too High: $depth")
             if (depth == slot) when (op) {
@@ -65,10 +65,10 @@ suspend fun Node(
         log("Sent Vote: $vote - $slot")
         zero = 0; one = 0
         //TODO can we reduce the amount we wait for here.
-        while ((zero + one + lost) < majority) {
+        while (zero + one + lost < majority) {
             votes.receive(buffer.clear())
             val op = buffer.get(0)
-            log("Got Vote: $op - $slot")
+            log("Got Vote ${zero + one + lost}: $op - $slot")
             val depth = buffer.getInt(1)
             if (depth > slot) error("Vote Too High: $depth")
             if (depth == slot) when (op) {

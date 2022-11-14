@@ -114,7 +114,7 @@ fun CoroutineScope.SMR(
                     val id = read.long()
                     messages[id] = read.bytes(read.int()).toString(UTF_8)
                     val instance = instances[abs(id % instances.size).toInt()]
-                    while (instance.size > 100) {}; instance.offer(id)
+                    instance.offer(id)
                 }; close()
             } }
         }
