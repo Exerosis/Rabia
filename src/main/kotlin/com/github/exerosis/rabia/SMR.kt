@@ -6,7 +6,9 @@ import kotlinx.coroutines.*
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.nio.channels.AsynchronousChannelGroup
-import java.util.concurrent.*
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentSkipListSet
+import java.util.concurrent.PriorityBlockingQueue
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLongArray
 import kotlin.math.abs
@@ -111,7 +113,8 @@ fun CoroutineScope.SMR(
                 while (isActive && isOpen) {
                     val id = read.long()
                     messages[id] = read.bytes(read.int()).toString(UTF_8)
-                    instances[abs(id % instances.size).toInt()].offer(id)
+                    val instance = instances[abs(id % instances.size).toInt()]
+                    while (instance.size > 100) {}; instance.offer(id)
                 }; close()
             } }
         }
