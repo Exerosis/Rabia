@@ -129,6 +129,9 @@ suspend fun Node(
                 }
             }
             commit(current, phase(0, STATE_ZERO, -1, current))
-        } } catch (_: Throwable) { commit(current, 0) }
+        } } catch (reason: Throwable) {
+            println("TIMED OUT!! $reason")
+            commit(current, 0)
+        }
     }
 }
