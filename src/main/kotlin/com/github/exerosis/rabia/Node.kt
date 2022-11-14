@@ -46,8 +46,8 @@ suspend fun Node(
         while (zero + one < majority) {
             states.receive(buffer.clear())
             val op = buffer.get(0)
-            log("Got State ${zero + one}: $op - $slot")
             val depth = buffer.getInt(1)
+            if (depth == slot) log("Got State ${zero + one}: $op - $slot")
             if (depth > slot) error("State Too High: $depth")
             if (depth == slot) when (op) {
                 STATE_ONE or p -> ++one
@@ -68,8 +68,8 @@ suspend fun Node(
         while (zero + one + lost < majority) {
             votes.receive(buffer.clear())
             val op = buffer.get(0)
-            log("Got Vote ${zero + one + lost}: $op - $slot")
             val depth = buffer.getInt(1)
+            if (depth == slot) log("Got Vote ${zero + one + lost}: $op - $slot")
             if (depth > slot) error("Vote Too High: $depth")
             if (depth == slot) when (op) {
                 VOTE_ONE or p -> ++one
