@@ -38,6 +38,7 @@ fun UDP(
         setOption(IP_MULTICAST_IF, network)
         setOption(SO_SNDBUF, size)
         setOption(SO_RCVBUF, size)
+        socket().soTimeout = 1000
         bind(InetSocketAddress(address, port))
         join(InetAddress.getByName(BROADCAST), network)
     }

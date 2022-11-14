@@ -1,9 +1,6 @@
 package com.github.exerosis.rabia
 
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
 import java.net.InetAddress.getByName
 import java.net.InetAddress.getLocalHost
 import java.net.InetSocketAddress
@@ -93,11 +90,12 @@ fun test3() = runBlocking(dispatcher) {
     val address = getByName(current)
     println(address)
     val channel = UDP(address, 2000, 65000)
-//    val test = withTimeoutOrNull(3.seconds) {
-//        runInterruptible {
-//            channel.receive(ByteBuffer.allocateDirect(10))
-//        }
-//    }
+    try {
+        val test = withTimeout(3.seconds) {
+            channel.receive(ByteBuffer.allocateDirect(10))
+        }
+    } catch (_: Throwable) {}
+    println(channel.isOpen)
 //
 //    println(test)
     println("Done!")

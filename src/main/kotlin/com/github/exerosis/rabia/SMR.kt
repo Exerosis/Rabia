@@ -37,7 +37,7 @@ fun CoroutineScope.SMR(
 //                println("Depth: $depth Id: $id - ${messages[id]}")
                 if (id != last)
                     println("Slightly out of sync!")
-                if (id == 0L) { error("Trying to erase!") }
+//                if (id == 0L) { error("Trying to erase!") }
                 if (depth < slot) { error("Trying to reinsert!") } //is this actually an issue?
                 if (depth % pipes.size != it) { error("Trying to pipe mix!") }
                 if (id != last) offer(last) else {
