@@ -85,5 +85,21 @@ fun test2() = runBlocking(dispatcher) {
         }
     }
 }
-
+fun test3() = runBlocking(dispatcher) {
+    val hostname = getLocalHost().hostName.split('.')[0]
+    println("Hostname: $hostname")
+    val main = hostname == "DESKTOP-NJ3CTN8"
+    val current =  if (main) "192.168.10.38" else "192.168.10.54"
+    val address = getByName(current)
+    println(address)
+    val channel = UDP(address, 2000, 65000)
+//    val test = withTimeoutOrNull(3.seconds) {
+//        runInterruptible {
+//            channel.receive(ByteBuffer.allocateDirect(10))
+//        }
+//    }
+//
+//    println(test)
+    println("Done!")
+}
 fun main() = run()

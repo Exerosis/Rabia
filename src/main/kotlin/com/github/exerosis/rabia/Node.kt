@@ -1,11 +1,13 @@
 package com.github.exerosis.rabia
 
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withTimeout
 import java.net.InetAddress
 import java.nio.ByteBuffer.allocateDirect
 import kotlin.experimental.or
 import kotlin.random.Random
-import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 const val OP_PROPOSE = 1L
 const val OP_STATE = 2L
@@ -20,6 +22,8 @@ const val VOTE_ONE = (OP_VOTE shl 6 or 32).toByte()
 const val VOTE_LOST = (OP_LOST shl 6).toByte()
 
 const val MASK_MID = (0b11L shl 62).inv()
+
+suspend fun active() = currentCoroutineContext().isActive
 
 suspend fun Node(
     port: Int, address: InetAddress, n: Int,
@@ -43,7 +47,7 @@ suspend fun Node(
         states.send(buffer.flip())
         log("Sent State: ${state or p} - $slot")
         var zero = 0; var one = 0; var lost = 0
-        while (zero + one < majority) {
+        while (active() && zero + one < majority) {
             states.receive(buffer.clear())
             val op = buffer.get(0)
             val depth = buffer.getInt(1)
@@ -65,7 +69,7 @@ suspend fun Node(
         log("Sent Vote: $vote - $slot")
         zero = 0; one = 0
         //TODO can we reduce the amount we wait for here.
-        while (zero + one + lost < majority) {
+        while (active() && zero + one + lost < majority) {
             votes.receive(buffer.clear())
             val op = buffer.get(0)
             val depth = buffer.getInt(1)
@@ -91,16 +95,16 @@ suspend fun Node(
         }, common, slot)
     }
     outer@ while (proposes.isOpen) {
-        withTimeout(10.milliseconds) {
-            val proposed = OP_PROPOSE shl 62 or messages()
-            var current = slot()
+        val proposed = OP_PROPOSE shl 62 or messages()
+        var current = slot()
+        try { withTimeout(1.seconds) {
             log("Proposed: $proposed - $current")
             buffer.clear().putLong(proposed).putInt(current)
             proposes.send(buffer.flip())
             var index = 0
             //create this lazily
             random = Random(current)
-            while (index < majority) {
+            while (isActive && index < majority) {
                 proposes.receive(buffer.clear())
                 proposals[index] = buffer.getLong(0)
                 if (proposals[index] shr 62 == OP_PROPOSE) {
@@ -125,7 +129,6 @@ suspend fun Node(
                 }
             }
             commit(current, phase(0, STATE_ZERO, -1, current))
-        }
-//        delay(1.milliseconds)
+        } } catch (_: Throwable) { commit(current, 0) }
     }
 }

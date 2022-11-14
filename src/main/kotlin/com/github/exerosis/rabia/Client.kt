@@ -52,7 +52,7 @@ fun main() = runBlocking(dispatcher) {
     }
     println("Starting!")
     var i = 0
-    while (true) {
+    while (i < 3000) {
         println("$i")
         submit("${i++}")
         delay(.024.seconds)

@@ -4,6 +4,7 @@ import com.github.exerosis.mynt.SocketProvider
 import com.github.exerosis.mynt.base.Connection
 import jdk.net.ExtendedSocketOptions.TCP_QUICKACK
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeoutOrNull
@@ -43,9 +44,9 @@ fun UDP(
     return object : Multicaster, AutoCloseable by channel {
         override val isOpen = channel.isOpen
         override suspend fun send(buffer: ByteBuffer)
-            { channel.send(buffer, broadcast) }
+            { runInterruptible { channel.send(buffer, broadcast) } }
         override suspend fun receive(buffer: ByteBuffer)
-            { channel.receive(buffer) }
+            { runInterruptible { channel.receive(buffer) } }
     }
 }
 
