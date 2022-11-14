@@ -56,7 +56,7 @@ fun test() = runBlocking(dispatcher) {
     }
     val buffer = ByteBuffer.allocateDirect(12)
     buffer.putInt(10).putLong(15L).flip()
-    channel.send(buffer, InetSocketAddress(BROADCAST, 1000))
+    channel.send(buffer)
     println("Sent!")
 }
 fun test2() = runBlocking(dispatcher) {
@@ -79,7 +79,7 @@ fun test2() = runBlocking(dispatcher) {
         while (isActive) {
             val buffer = ByteBuffer.allocateDirect(12)
             buffer.putInt(10).putLong(15L).flip()
-            channel.send(buffer, InetSocketAddress(BROADCAST, 2000))
+            channel.send(buffer)
             println("Sent!")
             delay(5.seconds)
         }

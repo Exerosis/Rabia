@@ -2,7 +2,6 @@ package com.github.exerosis.rabia
 
 import kotlinx.coroutines.withTimeout
 import java.net.InetAddress
-import java.net.InetSocketAddress
 import java.nio.ByteBuffer.allocateDirect
 import kotlin.experimental.or
 import kotlin.random.Random
@@ -32,30 +31,28 @@ suspend fun Node(
     val proposes = UDP(address, port,  65527)
     val states = UDP(address, port + 1,  65527)
     val votes = UDP(address, port + 2,  65527)
-    val toProposes = InetSocketAddress(BROADCAST, port)
-    val toStates = InetSocketAddress(BROADCAST, port + 1)
-    val toVotes = InetSocketAddress(BROADCAST, port + 2)
     val buffer = allocateDirect(12)
     val majority = (n / 2) + 1
     val proposals = LongArray(majority)
     var random = Random(0)
     log("N: $n F: $f Majority: $majority")
     suspend fun phase(p: Byte, state: Byte, common: Long, slot: Int): Long {
+        if (p > 0) error("took multiple phases!")
         log("Phase: $p - $slot")
         buffer.clear().put(state or p).putInt(slot)
-        states.send(buffer.flip(), toStates)
-        log("Sent State: ${state or p}")
+        states.send(buffer.flip())
+        log("Sent State: ${state or p} - $slot")
         var zero = 0; var one = 0; var lost = 0
         while ((zero + one) < majority) {
             states.receive(buffer.clear())
             val op = buffer.get(0)
-            log("Got State: $op")
+            log("Got State: $op - $slot")
             val depth = buffer.getInt(1)
             if (depth > slot) error("State Too High: $depth")
             if (depth == slot) when (op) {
                 STATE_ONE or p -> ++one
                 STATE_ZERO or p -> ++zero
-            } else println("here's the problem")
+            }
         }
         val vote = when {
             zero >= majority -> VOTE_ZERO
@@ -63,14 +60,15 @@ suspend fun Node(
             else -> VOTE_LOST
         }  or p
         buffer.clear().put(vote).putInt(slot)
-        votes.send(buffer.flip(), toVotes)
-        log("Sent Vote: $vote")
+        log("Trying to send vote!")
+        votes.send(buffer.flip())
+        log("Sent Vote: $vote - $slot")
         zero = 0; one = 0
         //TODO can we reduce the amount we wait for here.
         while ((zero + one + lost) < majority) {
             votes.receive(buffer.clear())
             val op = buffer.get(0)
-            log("Got Vote: $op")
+            log("Got Vote: $op - $slot")
             val depth = buffer.getInt(1)
             if (depth > slot) error("Vote Too High: $depth")
             if (depth == slot) when (op) {
@@ -79,7 +77,6 @@ suspend fun Node(
                 VOTE_LOST or p -> ++lost
             }
         }
-        log("Lost: $lost")
         return if (zero >= f + 1) -1
         else if (one >= f + 1) common and MASK_MID
         else phase((p + 1).toByte(), when {
@@ -95,10 +92,10 @@ suspend fun Node(
     outer@ while (proposes.isOpen) {
         withTimeout(10.milliseconds) {
             val proposed = OP_PROPOSE shl 62 or messages()
-            log("Proposed: $proposed")
             var current = slot()
+            log("Proposed: $proposed - $current")
             buffer.clear().putLong(proposed).putInt(current)
-            proposes.send(buffer.flip(), toProposes)
+            proposes.send(buffer.flip())
             var index = 0
             //create this lazily
             random = Random(current)
@@ -108,7 +105,7 @@ suspend fun Node(
                 if (proposals[index] shr 62 == OP_PROPOSE) {
                     val depth = buffer.getInt(8)
                     if (depth < current) continue
-                    log("Countered: ${proposals[index]}")
+                    log("Countered: ${proposals[index]} - $current")
                     if (current < depth) {
                         println("Might have accepted an earlier proposal that should have been dropped")
                         current = depth
