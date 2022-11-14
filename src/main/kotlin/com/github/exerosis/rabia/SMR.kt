@@ -34,7 +34,7 @@ fun CoroutineScope.SMR(
             var last = -1L; var slot = it
             Node(pipes[it], address, n, { depth, id ->
 //                println("$depth - $id != $last")
-                println("Depth: $depth Id: $id - ${messages[id]}")
+//                println("Depth: $depth Id: $id - ${messages[id]}")
                 if (id != last)
                     println("Slightly out of sync!")
                 if (id == 0L) { error("Trying to erase!") }
