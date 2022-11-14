@@ -4,7 +4,6 @@ import com.github.exerosis.mynt.SocketProvider
 import com.github.exerosis.mynt.base.Connection
 import jdk.net.ExtendedSocketOptions.TCP_QUICKACK
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeoutOrNull
@@ -38,16 +37,17 @@ fun UDP(
         setOption(IP_MULTICAST_IF, network)
         setOption(SO_SNDBUF, size)
         setOption(SO_RCVBUF, size)
-        socket().soTimeout = 1000
         bind(InetSocketAddress(address, port))
         join(InetAddress.getByName(BROADCAST), network)
+        configureBlocking(false)
     }
     return object : Multicaster, AutoCloseable by channel {
         override val isOpen = channel.isOpen
-        override suspend fun send(buffer: ByteBuffer)
-            { runInterruptible { channel.send(buffer, broadcast) } }
+        override suspend fun send(buffer: ByteBuffer) {
+            while (active() && channel.send(buffer, broadcast) == 0) { Thread.onSpinWait()}
+        }
         override suspend fun receive(buffer: ByteBuffer)
-            { runInterruptible { channel.receive(buffer) } }
+            { while (active() && channel.receive(buffer) == null) { Thread.onSpinWait() } }
     }
 }
 
