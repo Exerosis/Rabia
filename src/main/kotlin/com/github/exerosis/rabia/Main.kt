@@ -12,7 +12,7 @@ import java.nio.ByteBuffer
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.time.Duration.Companion.seconds
 
-const val DEBUG = true
+const val DEBUG = false
 const val SERVER = false
 
 fun run() = runBlocking(dispatcher) {
