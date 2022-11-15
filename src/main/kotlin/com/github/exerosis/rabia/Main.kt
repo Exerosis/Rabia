@@ -20,7 +20,10 @@ fun run() = runBlocking(dispatcher) {
     println("Current: ${current()}")
     println("Other: ${other()}")
     val address = getByName(current())
-    val nodes = arrayOf(InetSocketAddress(other(), 1000))
+    val repairs = arrayOf(
+        InetSocketAddress(other(), 2000),
+        InetSocketAddress(other(), 2001)
+    )
 
     val network = NetworkInterface.getByInetAddress(address)
     println("Interface: ${network.displayName}")
@@ -30,7 +33,7 @@ fun run() = runBlocking(dispatcher) {
         //and runs weak mvc instances on 2000-2002
         val processed = AtomicInteger(0)
         var index = 0
-        SMR(4, nodes, address, 1000 + i, 2000 + (i * 4), 3000) {
+        SMR(4, repairs, address, port=1000 + i, repair=2000 + i, 3000) {
             processed.incrementAndGet()
 //            if ("$index" != it) error("IDk why this is happening :D")
             println("${index++}: $it")

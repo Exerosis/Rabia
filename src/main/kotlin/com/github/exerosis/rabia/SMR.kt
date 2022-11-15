@@ -20,7 +20,7 @@ typealias Node = PriorityBlockingQueue<Long>
 val COMPARATOR = compareBy<Long> { it and 0xFFFFFFFF }.thenBy { it shr 32 }
 fun CoroutineScope.SMR(
     n: Int, nodes: Array<InetSocketAddress>,
-    address: InetAddress, port: Int, tcp: Int,
+    address: InetAddress, port: Int, repair: Int,
     vararg pipes: Int,
     commit: (String) -> (Unit)
 ) {
@@ -29,29 +29,32 @@ fun CoroutineScope.SMR(
     val committed = AtomicInteger(-1)
     val highest = AtomicInteger(-1)
     val using = ConcurrentSkipListSet<Int>()
-    val others = nodes
     val group = AsynchronousChannelGroup.withThreadPool(executor)
     val provider = SocketProvider(65536, group)
     val instances = Array(pipes.size) { Node(10, COMPARATOR) }
 
     suspend fun repair(start: Int, end: Int) {
         println("Repair: $start - $end")
-        others.shuffle()
-        others.firstOrNull { try {
-            withTimeout(5.seconds) {
-                provider.connect(it).apply {
-                    write.int(start); write.int(end)
-                    for (i in start..end) {
-                        val id = read.long()
-                        val bytes = read.bytes(read.short().toInt())
-                        if (bytes.isNotEmpty())
-                            messages[id] = bytes.toString(UTF_8);
-                        instances[abs(id % instances.size).toInt()].remove(id)
-                        log[i % log.length()] = id
-                    }; close()
-                }; true
+        nodes.shuffle()
+        nodes.firstOrNull {
+            try {
+                withTimeout(5.seconds) {
+                    provider.connect(it).apply {
+                        write.int(start); write.int(end)
+                        for (i in start..end) {
+                            val id = read.long()
+                            val bytes = read.bytes(read.short().toInt())
+                            if (bytes.isNotEmpty())
+                                messages[id] = bytes.toString(UTF_8);
+                            instances[abs(id % instances.size).toInt()].remove(id)
+                            log[i % log.length()] = id
+                        }; close()
+                    }; true
+                }
+            } catch (_: Throwable) {
+                false
             }
-        } catch (_: Throwable) { false } }
+        }
     }
     suspend fun catchup() {
         val to = using.minOrNull()?.minus(1) ?: highest.get()
@@ -127,7 +130,7 @@ fun CoroutineScope.SMR(
         }
     } catch (reason: Throwable) { reason.printStackTrace() } }
     launch { try {
-        val socket = InetSocketAddress(address, tcp)
+        val socket = InetSocketAddress(address, repair)
         while (provider.isOpen) {
             provider.accept(socket).apply { launch {
                 val start = read.int()
