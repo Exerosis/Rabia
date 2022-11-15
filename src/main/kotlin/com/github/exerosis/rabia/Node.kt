@@ -41,7 +41,7 @@ suspend fun Node(
     var random = Random(0)
     log("N: $n F: $f Majority: $majority")
     suspend fun phase(p: Byte, state: Byte, common: Long, slot: Int): Long {
-        if (p > 0) println("took multiple phases!")
+        if (p > 0) println("entering phase $p")
         log("Phase: $p - $slot")
         buffer.clear().put(state or p).putInt(slot)
         states.send(buffer.flip())
@@ -88,7 +88,7 @@ suspend fun Node(
             zero > 0 -> STATE_ZERO
             one > 0 -> STATE_ONE
             else -> {
-                println("ROLLIN THE DICE!")
+                println("Rolling: $p")
                 if (random.nextBoolean())
                     STATE_ZERO else STATE_ONE
             }

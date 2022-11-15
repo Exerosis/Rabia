@@ -77,6 +77,7 @@ fun CoroutineScope.SMR(
         launch(CoroutineName("Node-${port - 1000}")) { try {
             var last = -1L; var slot = i
             Node(pipes[i], address, n, { depth, id ->
+                if (depth != slot) println("DEPTH OFF")
 //                println("$depth - $id != $last")
 //                println("Depth: $depth Id: $id - ${messages[id]}")
                 if (id != last)
