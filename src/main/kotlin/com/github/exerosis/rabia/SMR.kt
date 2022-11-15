@@ -29,42 +29,11 @@ fun CoroutineScope.SMR(
     val committed = AtomicInteger(-1)
     val highest = AtomicInteger(-1)
     val using = ConcurrentSkipListSet<Int>()
-    val instances = Array(pipes.size) { Node(10, COMPARATOR).apply {
-        launch(CoroutineName("Node-${port - 1000}")) { try {
-            var last = -1L; var slot = it
-            Node(pipes[it], address, n, { depth, id ->
-//                println("$depth - $id != $last")
-//                println("Depth: $depth Id: $id - ${messages[id]}")
-                if (id != last)
-                    println("Slightly out of sync!")
-//                if (id == 0L) { error("Trying to erase!") }
-                if (depth < slot) { error("Trying to reinsert!") } //is this actually an issue?
-                if (depth % pipes.size != it) { error("Trying to pipe mix!") }
-                if (id != last) offer(last) else {
-                    log[depth % log.length()] = id
-                    //Update the highest index that contains a value.
-                    var current: Int; do { current = highest.get() }
-                    while (current < depth && !highest.compareAndSet(current, depth))
-                    //Could potentially move slot forward by more than one increment
-                    using.remove(slot)
-                    slot = depth + pipes.size
-                    //Will this be enough to keep the logs properly cleared?
-                    messages.remove(log[slot])
-                    log[slot] = 0L
-                }
-            }, {
-                log("Size: $size")
-                while ((slot - committed.get()) >= log.length()) {}
-                take().also<Long> { last = it }
-            }, {
-                using.add(slot)
-                slot
-            })
-        } catch (reason: Throwable) { reason.printStackTrace() } }
-    } }
+    val others = nodes
     val group = AsynchronousChannelGroup.withThreadPool(executor)
     val provider = SocketProvider(65536, group)
-    val others = nodes
+    val instances = Array(pipes.size) { Node(10, COMPARATOR) }
+
     suspend fun repair(start: Int, end: Int) {
         println("Repair: $start - $end")
         others.shuffle()
@@ -76,7 +45,8 @@ fun CoroutineScope.SMR(
                         val id = read.long()
                         val bytes = read.bytes(read.short().toInt())
                         if (bytes.isNotEmpty())
-                            messages[id] = bytes.toString(Charsets.UTF_8)
+                            messages[id] = bytes.toString(UTF_8);
+                        instances[abs(id % instances.size).toInt()].remove(id)
                         log[i % log.length()] = id
                     }; close()
                 }; true
@@ -100,6 +70,43 @@ fun CoroutineScope.SMR(
             break
         }
     }
+    instances.forEachIndexed { i, it -> it.apply {
+        launch(CoroutineName("Node-${port - 1000}")) { try {
+            var last = -1L; var slot = i
+            Node(pipes[i], address, n, { depth, id ->
+//                println("$depth - $id != $last")
+//                println("Depth: $depth Id: $id - ${messages[id]}")
+                if (id != last)
+                    println("Slightly out of sync!")
+//                if (id == 0L) { error("Trying to erase!") }
+                if (depth < slot) { error("Trying to reinsert!") } //is this actually an issue?
+                if (depth % pipes.size != i) { error("Trying to pipe mix!") }
+                if (id != last) {
+                    offer(last)
+                    if (depth > slot && id == 0L) repair(slot, depth)
+                } else {
+                    log[depth % log.length()] = id
+                    //Update the highest index that contains a value.
+                    var current: Int; do { current = highest.get() }
+                    while (current < depth && !highest.compareAndSet(current, depth))
+                    //Could potentially move slot forward by more than one increment
+                    using.remove(slot)
+                    slot = depth + pipes.size
+                    //Will this be enough to keep the logs properly cleared?
+                    messages.remove(log[slot])
+                    log[slot] = 0L
+                }
+            }, {
+                log("Size: $size")
+                while ((slot - committed.get()) >= log.length()) {}
+                take().also<Long> { last = it }
+            }, {
+                using.add(slot)
+                slot
+            })
+        } catch (reason: Throwable) { reason.printStackTrace() } }
+    } }
+
     launch { try {
         while (isActive) {
             delay(1.seconds)
@@ -129,7 +136,7 @@ fun CoroutineScope.SMR(
                     val id = log[i % log.length()]
                     write.long(id)
                     val message = messages[id].orEmpty()
-                    val bytes = message.toByteArray(Charsets.UTF_8)
+                    val bytes = message.toByteArray(UTF_8)
                     write.short(bytes.size.toShort())
                     write.bytes(bytes)
                 }
