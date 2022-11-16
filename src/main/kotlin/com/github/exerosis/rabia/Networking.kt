@@ -3,10 +3,7 @@ package com.github.exerosis.rabia
 import com.github.exerosis.mynt.SocketProvider
 import com.github.exerosis.mynt.base.Connection
 import jdk.net.ExtendedSocketOptions.TCP_QUICKACK
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.coroutines.*
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.NetworkInterface.getByInetAddress
@@ -15,7 +12,6 @@ import java.net.StandardSocketOptions.*
 import java.nio.ByteBuffer
 import java.nio.channels.AsynchronousChannelGroup.withThreadPool
 import java.nio.channels.DatagramChannel
-import kotlin.time.Duration.Companion.milliseconds
 
 const val BROADCAST = "230.0.0.0" //230
 
@@ -64,23 +60,33 @@ suspend fun TCP(
         it.setOption(TCP_QUICKACK, true)
     }
     val addresses = nodes.map { InetSocketAddress(it, port) }
-    val connections = Array<Connection?>(nodes.size) { null }
+    val server = InetSocketAddress(address, port)
+    val connections = ArrayList<Connection>()
+    val scope = CoroutineScope(dispatcher)
+    scope.launch {
+        while (provider.isOpen && isActive)
+            connections.add(provider.accept(server).apply {
+                scope.launch {
+
+                }
+            })
+    }
+    addresses.map {
+        scope.async { connections.add(provider.connect(it)) }
+    }.forEach { it.await() }
     return object : Multicaster {
-        val lock = Mutex(false)
         override val isOpen = provider.isOpen
-        override fun close() = runBlocking { provider.close() }
-        override suspend fun send(buffer: ByteBuffer) = lock.withLock {
-            addresses.forEachIndexed { i, it ->
-                if (connections[i]?.isOpen != true)
-                    connections[i] = withTimeoutOrNull(20.milliseconds) {
-                        provider.connect(it)
-                    }
-                connections[i]?.write?.buffer(buffer)
-            }
+        override fun close() = runBlocking { scope.cancel(); provider.close() }
+        override suspend fun send(buffer: ByteBuffer) {
+            connections.map {
+                scope.async { it.write.buffer(buffer) }
+            }.awaitAll()
         }
 
         override suspend fun receive(buffer: ByteBuffer) {
-            TODO("Not yet implemented")
+            connections.forEach {
+                it.read.buffer(buffer)
+            }
         }
     }
 }
