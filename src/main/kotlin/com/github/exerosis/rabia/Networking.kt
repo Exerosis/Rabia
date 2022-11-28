@@ -72,7 +72,7 @@ suspend fun TCP(
             setOption(SO_SNDBUF, size)
             setOption(SO_RCVBUF, size)
             setOption(TCP_NODELAY, true)
-            while (!connect(it)) { Thread.onSpinWait() }
+            if (!connect(it)) while (!finishConnect()) Thread.onSpinWait()
 //            setOption(TCP_QUICKACK, true)
         }) }
     }.forEach { it.await() }
