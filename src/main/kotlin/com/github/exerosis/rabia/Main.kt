@@ -27,8 +27,8 @@ fun run() = runBlocking(dispatcher) {
     val nodes = arrayOf(
         InetSocketAddress(current(), 3000),
         InetSocketAddress(current(), 3004),
-        InetSocketAddress(other(), 3000),
-        InetSocketAddress(other(), 3004)
+        InetSocketAddress(current(), 3008),
+        InetSocketAddress(current(), 3012)
     )
 
     val network = NetworkInterface.getByInetAddress(address)
