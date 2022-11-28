@@ -5,12 +5,14 @@ import com.github.exerosis.mynt.base.Connection
 import com.github.exerosis.mynt.bytes
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.net.InetSocketAddress
 import java.nio.channels.AsynchronousChannelGroup
 import java.time.Instant
 import kotlin.random.Random
+import kotlin.time.Duration.Companion.seconds
 
 val EPOCH = 1666745204552
 
@@ -18,12 +20,12 @@ fun main() = runBlocking(dispatcher) {
     val addresses = arrayOf(
         InetSocketAddress(current(), 1000),
         InetSocketAddress(current(), 1001),
-        InetSocketAddress(current(), 1002),
-        InetSocketAddress(current(), 1003),
+//        InetSocketAddress(current(), 1002),
+//        InetSocketAddress(current(), 1003),
 //        InetSocketAddress(current(), 1004),
 
-//        InetSocketAddress(other(), 1000),
-//        InetSocketAddress(other(), 1001),
+        InetSocketAddress(other(), 1000),
+        InetSocketAddress(other(), 1001),
 //        InetSocketAddress(other(), 1002),
     )
     val addresses2 = arrayOf<InetSocketAddress>(
@@ -78,12 +80,12 @@ fun main() = runBlocking(dispatcher) {
         } }
     }
     println("Starting!")
-//    var i = 0
-//    while (i < 3000) {
-//        println("$i")
-//        submit("${i++}")
-//        delay(.024.seconds)
-//    }
-    submit("hello")
-    submit2("world")
+    var i = 0
+    while (i < 3000) {
+        println("$i")
+        submit("${i++}")
+        delay(.024.seconds)
+    }
+//    submit("hello")
+//    submit2("world")
 }

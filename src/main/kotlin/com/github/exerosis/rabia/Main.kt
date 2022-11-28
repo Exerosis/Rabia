@@ -27,8 +27,8 @@ fun run() = runBlocking(dispatcher) {
     val nodes = arrayOf(
         InetSocketAddress(current(), 3000),
         InetSocketAddress(current(), 3004),
-        InetSocketAddress(current(), 3008),
-        InetSocketAddress(current(), 3012)
+        InetSocketAddress(other(), 3000),
+        InetSocketAddress(other(), 3004)
     )
 
     val network = NetworkInterface.getByInetAddress(address)
@@ -42,7 +42,7 @@ fun run() = runBlocking(dispatcher) {
         SMR(4,
             repair=2000 + i, repairs,
             pipes=arrayOf(3000 + (i * 4)), nodes,
-            port=1000, address
+            port=1000 + i, address
         ) {
             processed.incrementAndGet()
 //            if ("$index" != it) error("IDk why this is happening :D")

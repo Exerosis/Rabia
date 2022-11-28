@@ -1,6 +1,5 @@
 package com.github.exerosis.rabia
 
-import jdk.net.ExtendedSocketOptions.TCP_QUICKACK
 import kotlinx.coroutines.*
 import java.net.InetAddress
 import java.net.InetSocketAddress
@@ -39,7 +38,7 @@ fun UDP(
     return object : Multicaster, AutoCloseable by channel {
         override val isOpen = channel.isOpen
         override suspend fun send(buffer: ByteBuffer) {
-            while (active() && channel.send(buffer, broadcast) == 0) { Thread.onSpinWait()}
+            while (active() && channel.send(buffer, broadcast) == 0) { Thread.onSpinWait() }
         }
         override suspend fun receive(buffer: ByteBuffer)
             { while (active() && channel.receive(buffer) == null) { Thread.onSpinWait() } }
@@ -58,12 +57,12 @@ suspend fun TCP(
     val connections = ArrayList<SocketChannel>()
     scope.launch {
         while (server.isOpen && isActive)
-            server.accept().apply {
+            server.accept()?.apply {
                 configureBlocking(false)
                 setOption(SO_SNDBUF, size)
                 setOption(SO_RCVBUF, size)
                 setOption(TCP_NODELAY, true)
-                setOption(TCP_QUICKACK, true)
+//                setOption(TCP_QUICKACK, true)
                 connections.add(this)
             }
     }
@@ -73,7 +72,7 @@ suspend fun TCP(
             setOption(SO_SNDBUF, size)
             setOption(SO_RCVBUF, size)
             setOption(TCP_NODELAY, true)
-            setOption(TCP_QUICKACK, true)
+//            setOption(TCP_QUICKACK, true)
         }) }
     }.forEach { it.await() }
     return object : Multicaster {
@@ -81,20 +80,27 @@ suspend fun TCP(
         override fun close() = runBlocking { scope.cancel(); server.close() }
         override suspend fun send(buffer: ByteBuffer) {
             connections.map {
-                val copy = buffer.slice()
+                val copy = buffer.duplicate()
                 scope.async {
-                    while (copy.hasRemaining())
+                    while (copy.hasRemaining()) {
                         it.write(copy)
+                        Thread.onSpinWait()
+                    }
                 }
             }.awaitAll()
         }
         override suspend fun receive(buffer: ByteBuffer) {
-            connections.forEach {
-                if (it.read(buffer) != 0) {
-                    while (buffer.hasRemaining())
-                        it.read(buffer)
-                    return
+            while (true) {
+                connections.forEach {
+                    if (it.read(buffer) != 0) {
+                        while (buffer.hasRemaining()) {
+                            it.read(buffer)
+                            Thread.onSpinWait()
+                        }
+                        return
+                    }
                 }
+                Thread.onSpinWait()
             }
         }
     }

@@ -34,9 +34,7 @@ suspend fun Node(
     vararg nodes: InetSocketAddress
 ) {
     val f = (n / 2) - 1
-    val proposes = TCP(address, port, 65527, *nodes.map {
-        InetSocketAddress(it.address, it.port + 0)
-    }.toTypedArray())
+    val proposes = TCP(address, port, 65527, *nodes)
     val states = TCP(address, port + 1, 65527, *nodes.map {
         InetSocketAddress(it.address, it.port + 1)
     }.toTypedArray())
@@ -56,7 +54,7 @@ suspend fun Node(
         log("Sent State: ${state or p} - $slot")
         var zero = 0; var one = 0; var lost = 0
         while (active() && zero + one < majority) {
-            states.receive(buffer.clear())
+            states.receive(buffer.clear().limit(5))
             val op = buffer.get(0)
             val depth = buffer.getInt(1)
             if (depth == slot) log("Got State ${zero + one}: $op - $slot")
@@ -70,7 +68,7 @@ suspend fun Node(
             zero >= majority -> VOTE_ZERO
             one >= majority -> VOTE_ONE
             else -> VOTE_LOST
-        }  or p
+        } or p
         buffer.clear().put(vote).putInt(slot)
         log("Trying to send vote!")
         votes.send(buffer.flip())
@@ -78,7 +76,7 @@ suspend fun Node(
         zero = 0; one = 0
         //TODO can we reduce the amount we wait for here.
         while (active() && zero + one + lost < majority) {
-            votes.receive(buffer.clear())
+            votes.receive(buffer.clear().limit(5))
             val op = buffer.get(0)
             val depth = buffer.getInt(1)
             if (depth == slot) log("Got Vote ${zero + one + lost}: $op - $slot")
@@ -92,50 +90,55 @@ suspend fun Node(
         log("End Phase: $p - $slot")
         return if (zero >= f + 1) -1
         else if (one >= f + 1) common and MASK_MID
-        else phase((p + 1).toByte(), when {
-            zero > 0 -> STATE_ZERO
-            one > 0 -> STATE_ONE
-            else -> {
-                println("Rolling: $p")
-                if (random.nextBoolean())
-                    STATE_ZERO else STATE_ONE
-            }
-        }, common, slot)
+        else phase(
+            (p + 1).toByte(), when {
+                zero > 0 -> STATE_ZERO
+                one > 0 -> STATE_ONE
+                else -> {
+                    println("Rolling: $p")
+                    if (random.nextBoolean())
+                        STATE_ZERO else STATE_ONE
+                }
+            }, common, slot
+        )
     }
     outer@ while (proposes.isOpen) {
         val proposed = OP_PROPOSE shl 62 or messages()
         var current = slot()
-        try { withTimeout(1.seconds) {
-            log("Proposed: $proposed - $current")
-            buffer.clear().putLong(proposed).putInt(current)
-            proposes.send(buffer.flip())
-            var index = 0
-            //create this lazily
-            random = Random(current)
-            while (isActive && index < majority) {
-                proposes.receive(buffer.clear())
-                proposals[index] = buffer.getLong(0)
-                if (proposals[index] shr 62 == OP_PROPOSE) {
-                    val depth = buffer.getInt(8)
-                    if (depth < current) continue
-                    log("Countered: ${proposals[index]} - $current")
-                    if (current < depth) {
-                        println("Might have accepted an earlier proposal that should have been dropped")
-                        current = depth
-                    }
-                    var count = 1
-                    for (i in 0 until index) {
-                        if (proposals[i] == proposals[index]) {
-                            if (++count >= majority) {
-                                commit(current, phase(0, STATE_ONE, proposals[i], current)); return@withTimeout
+        try {
+            withTimeout(1.seconds) {
+                log("Proposed: $proposed - $current")
+                buffer.clear().putLong(proposed).putInt(current)
+                proposes.send(buffer.flip())
+                var index = 0
+                //create this lazily
+                random = Random(current)
+                while (isActive && index < majority) {
+                    proposes.receive(buffer.clear())
+                    proposals[index] = buffer.getLong(0)
+                    if (proposals[index] shr 62 == OP_PROPOSE) {
+                        val depth = buffer.getInt(8)
+                        if (depth < current) continue
+                        if (current < depth) {
+                            println("Might have accepted an earlier proposal that should have been dropped")
+//                            current = depth
+                        }
+                        var count = 1
+                        for (i in 0 until index) {
+                            if (proposals[i] == proposals[index]) {
+                                if (++count >= majority) {
+                                    log("Countered: ${proposals[index]}($count/$majority) - $current")
+                                    commit(current, phase(0, STATE_ONE, proposals[i], current)); return@withTimeout
+                                }
                             }
                         }
+                        log("Countered: ${proposals[index]}($count/$majority) - $current")
+                        ++index;
                     }
-                    ++index;
                 }
+                commit(current, phase(0, STATE_ZERO, -1, current))
             }
-            commit(current, phase(0, STATE_ZERO, -1, current))
-        } } catch (reason: Throwable) {
+        } catch (reason: Throwable) {
             println("TIMED OUT!! $reason")
             commit(current, 0)
         }
