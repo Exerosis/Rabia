@@ -67,14 +67,15 @@ suspend fun TCP(
             }
     }
     addresses.map {
-        scope.async { connections.add(SocketChannel.open().apply {
-            configureBlocking(false)
-            setOption(SO_SNDBUF, size)
-            setOption(SO_RCVBUF, size)
-            setOption(TCP_NODELAY, true)
-            if (!connect(it)) while (!finishConnect()) Thread.onSpinWait()
+        scope.async { while (true) try {
+            return@async connections.add(SocketChannel.open(it).apply {
+                configureBlocking(false)
+                setOption(SO_SNDBUF, size)
+                setOption(SO_RCVBUF, size)
+                setOption(TCP_NODELAY, true)
 //            setOption(TCP_QUICKACK, true)
-        }) }
+            })
+        } catch (_: Throwable) {}}
     }.forEach { it.await() }
     return object : Multicaster {
         override val isOpen = server.isOpen
