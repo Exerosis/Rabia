@@ -67,11 +67,12 @@ suspend fun TCP(
             }
     }
     addresses.map {
-        scope.async { connections.add(SocketChannel.open(it).apply {
+        scope.async { connections.add(SocketChannel.open().apply {
             configureBlocking(false)
             setOption(SO_SNDBUF, size)
             setOption(SO_RCVBUF, size)
             setOption(TCP_NODELAY, true)
+            while (!connect(it)) { Thread.onSpinWait() }
 //            setOption(TCP_QUICKACK, true)
         }) }
     }.forEach { it.await() }
