@@ -4,6 +4,7 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withTimeout
 import java.net.InetAddress
+import java.net.InetSocketAddress
 import java.nio.ByteBuffer.allocateDirect
 import kotlin.experimental.or
 import kotlin.random.Random
@@ -30,11 +31,18 @@ suspend fun Node(
     commit: suspend (Int, Long) -> (Unit),
     messages: suspend () -> (Long),
     slot: suspend () -> (Int),
+    vararg nodes: InetSocketAddress
 ) {
     val f = (n / 2) - 1
-    val proposes = UDP(address, port,  65527)
-    val states = UDP(address, port + 1,  65527)
-    val votes = UDP(address, port + 2,  65527)
+    val proposes = TCP(address, port, 65527, *nodes.map {
+        InetSocketAddress(it.address, it.port + 0)
+    }.toTypedArray())
+    val states = TCP(address, port + 1, 65527, *nodes.map {
+        InetSocketAddress(it.address, it.port + 1)
+    }.toTypedArray())
+    val votes = TCP(address, port + 2, 65527, *nodes.map {
+        InetSocketAddress(it.address, it.port + 2)
+    }.toTypedArray())
     val buffer = allocateDirect(12)
     val majority = (n / 2) + 1
     val proposals = LongArray(majority)

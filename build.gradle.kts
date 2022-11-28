@@ -20,6 +20,6 @@ tasks.shadowJar {
     archiveFileName.set("${project.name}.jar")
     destinationDirectory.set(file("./"))
     manifest.attributes["Main-Class"] = "com.github.exerosis.rabia.MainKt"
-}
+}z
 
 tasks.build { dependsOn(tasks.shadowJar) }

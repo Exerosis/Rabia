@@ -18,23 +18,23 @@ fun main() = runBlocking(dispatcher) {
     val addresses = arrayOf(
         InetSocketAddress(current(), 1000),
         InetSocketAddress(current(), 1001),
-//        InetSocketAddress(current(), 1002),
-//        InetSocketAddress(current(), 1003),
+        InetSocketAddress(current(), 1002),
+        InetSocketAddress(current(), 1003),
 //        InetSocketAddress(current(), 1004),
 
 //        InetSocketAddress(other(), 1000),
 //        InetSocketAddress(other(), 1001),
 //        InetSocketAddress(other(), 1002),
     )
-    val addresses2 = arrayOf(
+    val addresses2 = arrayOf<InetSocketAddress>(
 //        InetSocketAddress(current(), 1000),
 //        InetSocketAddress(current(), 1001),
 //        InetSocketAddress(current(), 1002),
 //        InetSocketAddress(current(), 1003),
 //        InetSocketAddress(current(), 1004),
 
-        InetSocketAddress(other(), 1000),
-        InetSocketAddress(other(), 1001),
+//        InetSocketAddress(current(), 1002),
+//        InetSocketAddress(current(), 1003),
 //        InetSocketAddress(other(), 1002),
     )
     val group = AsynchronousChannelGroup.withThreadPool(executor)

@@ -19,9 +19,10 @@ typealias Node = PriorityBlockingQueue<Long>
 
 val COMPARATOR = compareBy<Long> { it and 0xFFFFFFFF }.thenBy { it shr 32 }
 fun CoroutineScope.SMR(
-    n: Int, nodes: Array<InetSocketAddress>,
-    address: InetAddress, port: Int, repair: Int,
-    vararg pipes: Int,
+    n: Int,
+    repair: Int, repairs: Array<InetSocketAddress>,
+    pipes: Array<Int>, nodes: Array<InetSocketAddress>,
+    port: Int, address: InetAddress,
     commit: (String) -> (Unit)
 ) {
     val log = AtomicLongArray(65536) //Filled with NONE
@@ -35,8 +36,8 @@ fun CoroutineScope.SMR(
 
     suspend fun repair(start: Int, end: Int) {
         println("Repair: $start - $end")
-        nodes.shuffle()
-        nodes.firstOrNull {
+        repairs.shuffle()
+        repairs.firstOrNull {
             try {
                 withTimeout(5.seconds) {
                     provider.connect(it).apply {
@@ -86,7 +87,7 @@ fun CoroutineScope.SMR(
                 if (depth < slot) { error("Trying to reinsert!") } //is this actually an issue?
                 if (depth % pipes.size != i) { error("Trying to pipe mix!") }
                 if (id != last) {
-                    offer(last)
+//                    offer(last)
                     if (depth > slot && id == 0L) repair(slot, depth)
                 } else {
                     log[depth % log.length()] = id
@@ -107,7 +108,7 @@ fun CoroutineScope.SMR(
             }, {
                 using.add(slot)
                 slot
-            })
+            }, *nodes)
         } catch (reason: Throwable) { reason.printStackTrace() } }
     } }
 

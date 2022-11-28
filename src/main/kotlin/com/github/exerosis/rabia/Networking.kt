@@ -1,7 +1,5 @@
 package com.github.exerosis.rabia
 
-import com.github.exerosis.mynt.SocketProvider
-import com.github.exerosis.mynt.base.Connection
 import jdk.net.ExtendedSocketOptions.TCP_QUICKACK
 import kotlinx.coroutines.*
 import java.net.InetAddress
@@ -10,8 +8,9 @@ import java.net.NetworkInterface.getByInetAddress
 import java.net.StandardProtocolFamily.INET
 import java.net.StandardSocketOptions.*
 import java.nio.ByteBuffer
-import java.nio.channels.AsynchronousChannelGroup.withThreadPool
 import java.nio.channels.DatagramChannel
+import java.nio.channels.ServerSocketChannel
+import java.nio.channels.SocketChannel
 
 const val BROADCAST = "230.0.0.0" //230
 
@@ -50,42 +49,52 @@ fun UDP(
 suspend fun TCP(
     address: InetAddress,
     port: Int, size: Int,
-    vararg nodes: InetAddress
+    vararg addresses: InetSocketAddress
 ): Multicaster {
-    val group = withThreadPool(executor)
-    val provider = SocketProvider(size, group) {
-        it.setOption(SO_SNDBUF, size)
-        it.setOption(SO_RCVBUF, size)
-        it.setOption(TCP_NODELAY, true)
-        it.setOption(TCP_QUICKACK, true)
-    }
-    val addresses = nodes.map { InetSocketAddress(it, port) }
-    val server = InetSocketAddress(address, port)
-    val connections = ArrayList<Connection>()
+    val server = ServerSocketChannel.open()
+    server.configureBlocking(false)
+    server.bind(InetSocketAddress(address, port))
     val scope = CoroutineScope(dispatcher)
+    val connections = ArrayList<SocketChannel>()
     scope.launch {
-        while (provider.isOpen && isActive)
-            connections.add(provider.accept(server).apply {
-                scope.launch {
-
-                }
-            })
+        while (server.isOpen && isActive)
+            server.accept().apply {
+                configureBlocking(false)
+                setOption(SO_SNDBUF, size)
+                setOption(SO_RCVBUF, size)
+                setOption(TCP_NODELAY, true)
+                setOption(TCP_QUICKACK, true)
+                connections.add(this)
+            }
     }
     addresses.map {
-        scope.async { connections.add(provider.connect(it)) }
+        scope.async { connections.add(SocketChannel.open(it).apply {
+            configureBlocking(false)
+            setOption(SO_SNDBUF, size)
+            setOption(SO_RCVBUF, size)
+            setOption(TCP_NODELAY, true)
+            setOption(TCP_QUICKACK, true)
+        }) }
     }.forEach { it.await() }
     return object : Multicaster {
-        override val isOpen = provider.isOpen
-        override fun close() = runBlocking { scope.cancel(); provider.close() }
+        override val isOpen = server.isOpen
+        override fun close() = runBlocking { scope.cancel(); server.close() }
         override suspend fun send(buffer: ByteBuffer) {
             connections.map {
-                scope.async { it.write.buffer(buffer) }
+                val copy = buffer.slice()
+                scope.async {
+                    while (copy.hasRemaining())
+                        it.write(copy)
+                }
             }.awaitAll()
         }
-
         override suspend fun receive(buffer: ByteBuffer) {
             connections.forEach {
-                it.read.buffer(buffer)
+                if (it.read(buffer) != 0) {
+                    while (buffer.hasRemaining())
+                        it.read(buffer)
+                    return
+                }
             }
         }
     }
