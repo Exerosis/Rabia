@@ -11,13 +11,17 @@ import java.util.concurrent.ConcurrentSkipListSet
 import java.util.concurrent.PriorityBlockingQueue
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLongArray
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.math.abs
 import kotlin.text.Charsets.UTF_8
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.ExperimentalTime
+import kotlin.time.TimeSource.Monotonic.markNow
 
 typealias Node = PriorityBlockingQueue<Long>
 
 val COMPARATOR = compareBy<Long> { it and 0xFFFFFFFF }.thenBy { it shr 32 }
+@OptIn(ExperimentalTime::class)
 fun CoroutineScope.SMR(
     n: Int,
     repair: Int, repairs: Array<InetSocketAddress>,
@@ -75,6 +79,8 @@ fun CoroutineScope.SMR(
         }
     }
     instances.forEachIndexed { i, it -> it.apply {
+        val mark = AtomicReference(markNow())
+        val count = AtomicInteger(0)
         launch(CoroutineName("Node-${port - 1000}")) { try {
             var last = -1L; var slot = i
             Node(pipes[i], address, n, { depth, id ->
@@ -100,6 +106,10 @@ fun CoroutineScope.SMR(
                     //Will this be enough to keep the logs properly cleared?
                     messages.remove(log[slot])
                     log[slot] = 0L
+                    if (count.incrementAndGet() == 100) {
+                        val amount = count.getAndSet(0)
+                        println("$amount in ${mark.getAndSet(markNow()).elapsedNow()}")
+                    }
                 }
             }, {
                 log("Size: $size")
