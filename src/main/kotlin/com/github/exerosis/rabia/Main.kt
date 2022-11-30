@@ -26,7 +26,7 @@ fun run() = runBlocking(dispatcher) {
     println("Other: ${other()}")
     val address = NetworkInterface.networkInterfaces().asSequence().flatMap {
         it.inetAddresses.asSequence()
-    }.find { "192.168.1" in it.hostName }
+    }.find { "192.168.1" in it.hostName }!!
     println(address)
 //    val repairs = arrayOf(
 //        InetSocketAddress(other(), 2000),
