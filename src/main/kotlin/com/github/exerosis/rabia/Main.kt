@@ -25,21 +25,33 @@ fun run() = runBlocking(dispatcher) {
     println("Current: ${current()}")
     println("Other: ${other()}")
     val address = getByName(current())
+//    val repairs = arrayOf(
+//        InetSocketAddress(other(), 2000),
+//        InetSocketAddress(other(), 2001)
+//    )
+//    val nodes = arrayOf(
+//        InetSocketAddress(current(), 3000),
+//        InetSocketAddress(current(), 3004),
+//        InetSocketAddress(other(), 3000),
+//        InetSocketAddress(other(), 3004)
+//    )
     val repairs = arrayOf(
-        InetSocketAddress(other(), 2000),
-        InetSocketAddress(other(), 2001)
+        InetSocketAddress("192.168.1.1", 2000),
+        InetSocketAddress("192.168.1.2", 2000),
+        InetSocketAddress("192.168.1.3", 2000),
+        InetSocketAddress("192.168.1.4", 2000),
     )
     val nodes = arrayOf(
-        InetSocketAddress(current(), 3000),
-        InetSocketAddress(current(), 3004),
-        InetSocketAddress(other(), 3000),
-        InetSocketAddress(other(), 3004)
+        InetSocketAddress("192.168.1.1", 3000),
+        InetSocketAddress("192.168.1.2", 3000),
+        InetSocketAddress("192.168.1.3", 3000),
+        InetSocketAddress("192.168.1.4", 3000),
     )
 
     val network = NetworkInterface.getByInetAddress(address)
     println("Interface: ${network.displayName}")
 
-    for (i in 0 until 4) {
+    for (i in 0 until 1) {
         //create a node that takes messages on 1000
         //and runs weak mvc instances on 2000-2002
         val processed = AtomicInteger(0)

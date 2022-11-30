@@ -18,15 +18,20 @@ val EPOCH = 1666745204552
 
 fun main() = runBlocking(dispatcher) {
     val addresses = arrayOf(
-        InetSocketAddress(current(), 1000),
-        InetSocketAddress(current(), 1001),
+//        InetSocketAddress(current(), 1000),
+//        InetSocketAddress(current(), 1001),
 //        InetSocketAddress(current(), 1002),
 //        InetSocketAddress(current(), 1003),
 //        InetSocketAddress(current(), 1004),
 
-        InetSocketAddress(other(), 1000),
-        InetSocketAddress(other(), 1001),
+//        InetSocketAddress(other(), 1000),
+//        InetSocketAddress(other(), 1001),
 //        InetSocketAddress(other(), 1002),
+
+        InetSocketAddress("192.168.1.1", 1000),
+        InetSocketAddress("192.168.1.2", 1000),
+        InetSocketAddress("192.168.1.3", 1000),
+        InetSocketAddress("192.168.1.4", 1000),
     )
     val addresses2 = arrayOf<InetSocketAddress>(
 //        InetSocketAddress(current(), 1000),

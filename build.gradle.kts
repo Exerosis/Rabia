@@ -1,3 +1,5 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+
 plugins {
     id("org.jetbrains.kotlin.jvm").version("1.7.20")
     id("com.github.johnrengelman.shadow").version("7.1.2")
@@ -22,4 +24,12 @@ tasks.shadowJar {
     manifest.attributes["Main-Class"] = "com.github.exerosis.rabia.MainKt"
 }
 
-tasks.build { dependsOn(tasks.shadowJar) }
+val client = tasks.create<ShadowJar>("client") {
+    from(sourceSets.main.get().output)
+    configurations = listOf(project.configurations.runtimeClasspath.get())
+    archiveFileName.set("Client.jar")
+    destinationDirectory.set(file("./"))
+    manifest.attributes["Main-Class"] = "com.github.exerosis.rabia.ClientKt"
+}
+
+tasks.build { dependsOn(tasks.shadowJar, client) }
