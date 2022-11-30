@@ -35,7 +35,7 @@ fun CoroutineScope.SMR(
     val instances = Array(pipes.size) { Node(10, COMPARATOR) }
 
     suspend fun repair(start: Int, end: Int) {
-        println("Repair: $start - $end")
+        warn("Repair: $start - $end")
         repairs.shuffle()
         repairs.firstOrNull {
             try {
@@ -59,7 +59,6 @@ fun CoroutineScope.SMR(
     }
     suspend fun catchup() {
         val to = using.minOrNull()?.minus(1) ?: highest.get()
-        println("${((committed.get() + 1)..to).count()}/s")
 //        println("InUse: $using Committed: $committed To: $to Highest: ${highest.get()}")
         for (i in (committed.get() + 1)..to) {
             if (log[i] == -1L) continue

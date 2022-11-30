@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalTime::class)
+
 package com.github.exerosis.rabia
 
 import kotlinx.coroutines.delay
@@ -10,12 +12,16 @@ import java.net.InetSocketAddress
 import java.net.NetworkInterface
 import java.nio.ByteBuffer
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.ExperimentalTime
+import kotlin.time.TimeSource.Monotonic.markNow
 
 const val DEBUG = false
 const val WARN = true
 const val SERVER = false
 
+@OptIn(ExperimentalTime::class)
 fun run() = runBlocking(dispatcher) {
     println("Hostname: $hostname")
     println("Current: ${current()}")
@@ -40,11 +46,17 @@ fun run() = runBlocking(dispatcher) {
         //and runs weak mvc instances on 2000-2002
         val processed = AtomicInteger(0)
         var index = 0
+        val last = AtomicReference(markNow())
+        val count = AtomicInteger(0)
         SMR(4,
             repair=2000 + i, repairs,
             pipes=arrayOf(3000 + (i * 4)), nodes,
             port=1000 + i, address
         ) {
+            if (count.incrementAndGet() == 100) {
+                val amount = count.getAndSet(0)
+                println("$amount in ${last.getAndSet(markNow()).elapsedNow()}")
+            }
             processed.incrementAndGet()
 //            if ("$index" != it) error("IDk why this is happening :D")
             println("${index++}: $it")
