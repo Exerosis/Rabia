@@ -6,6 +6,7 @@ import kotlinx.coroutines.withTimeout
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer.allocateDirect
+import java.util.*
 import kotlin.experimental.or
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
@@ -102,9 +103,11 @@ suspend fun Node(
             }, common, slot
         )
     }
+
+    val saved = HashMap<Int, LinkedList<Long>>()
     outer@ while (proposes.isOpen) {
-        val proposed = OP_PROPOSE shl 62 or messages()
-        var current = slot()
+        val proposed = messages()
+        val current = slot()
         try {
             withTimeout(1.seconds) {
                 log("Proposed: $proposed - $current")
@@ -114,32 +117,33 @@ suspend fun Node(
                 //create this lazily
                 random = Random(current)
                 while (isActive && index < majority) {
-                    proposes.receive(buffer.clear())
-                    proposals[index] = buffer.getLong(0)
-                    if (proposals[index] shr 62 == OP_PROPOSE) {
+                    val proposal = if (saved[current]?.isNotEmpty() == true) {
+                        log("Used Saved")
+                        saved[current]!!.pollLast()
+                    } else {
+                        proposes.receive(buffer.clear())
+                        val proposal = buffer.getLong(0)
                         val depth = buffer.getInt(8)
                         if (depth < current) continue
                         if (current < depth) {
-                            println("Might have accepted an earlier proposal that should have been dropped")
-//                            current = depth
+                            saved.getOrPut(depth) { LinkedList() }.offerFirst(proposal)
+                            continue
                         }
-                        var count = 1
-                        for (i in 0 until index) {
-                            if (proposals[i] == proposals[index]) {
-                                if (++count >= majority) {
-                                    log("Countered: ${proposals[index]}($count/$majority) - $current")
-                                    commit(current, phase(0, STATE_ONE, proposals[i], current)); return@withTimeout
-                                }
-                            }
-                        }
-                        log("Countered: ${proposals[index]}($count/$majority) - $current")
-                        ++index;
+                        proposal
                     }
+                    var count = 1
+                    for (i in 0 until index)
+                        if (proposals[i] == proposal && ++count >= majority) {
+                            log("Countered: $proposal($count/$majority) - $current")
+                            return@withTimeout commit(current, phase(0, STATE_ONE, proposals[i], current))
+                        }
+                    log("Countered: $proposal($count/$majority) - $current")
+                    proposals[index++] = proposal
                 }
                 commit(current, phase(0, STATE_ZERO, -1, current))
             }
         } catch (reason: Throwable) {
-            println("TIMED OUT!! $reason")
+            log("Timed Out: $reason")
             commit(current, 0)
         }
     }
