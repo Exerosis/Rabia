@@ -1,5 +1,6 @@
 package com.github.exerosis.rabia
 
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withTimeout
@@ -123,6 +124,7 @@ suspend fun Node(
                         val depth = buffer.getInt(8)
                         if (depth < current) continue
                         if (current < depth) {
+                            warn("Added Saved")
                             saved.getOrPut(depth) { LinkedList() }.offerFirst(proposal)
                             continue
                         }
@@ -139,8 +141,8 @@ suspend fun Node(
                 }
                 commit(current, phase(0, STATE_ZERO, -1, current))
             }
-        } catch (reason: Throwable) {
-            warn("Timed Out: $reason")
+        } catch (reason: TimeoutCancellationException) {
+            warn("Timed Out")
             commit(current, 0)
         }
     }
