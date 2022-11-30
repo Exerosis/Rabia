@@ -12,6 +12,7 @@ import java.net.InetSocketAddress
 import java.net.NetworkInterface
 import java.nio.ByteBuffer
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.streams.asSequence
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
 
@@ -23,9 +24,9 @@ fun run() = runBlocking(dispatcher) {
     println("Hostname: $hostname")
     println("Current: ${current()}")
     println("Other: ${other()}")
-    val address = NetworkInterface.getNetworkInterfaces().asSequence().find {
-        it.inetAddresses.nextElement().toString().contains("192.168.1")
-    }!!.inetAddresses.nextElement()
+    val address = NetworkInterface.networkInterfaces().asSequence().flatMap {
+        it.inetAddresses.asSequence()
+    }.find { "192.168.1" in it.hostName }
     println(address)
 //    val repairs = arrayOf(
 //        InetSocketAddress(other(), 2000),
