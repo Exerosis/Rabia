@@ -23,7 +23,7 @@ fun run() = runBlocking(dispatcher) {
     println("Hostname: $hostname")
     println("Current: ${current()}")
     println("Other: ${other()}")
-    val address = getByName("eno2")
+    val address =  NetworkInterface.getByName("eno2").inetAddresses.nextElement()
     println(address)
 //    val repairs = arrayOf(
 //        InetSocketAddress(other(), 2000),
