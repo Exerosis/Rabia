@@ -11,7 +11,6 @@ import kotlin.experimental.or
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
 
-const val OP_PROPOSE = 1L
 const val OP_STATE = 2L
 const val OP_VOTE = 3L
 const val OP_LOST = 4L
@@ -48,8 +47,7 @@ suspend fun Node(
     var random = Random(0)
     log("N: $n F: $f Majority: $majority")
     suspend fun phase(p: Byte, state: Byte, common: Long, slot: Int): Long {
-        if (p > 0) println("entering phase $p")
-        log("Phase: $p - $slot")
+        if (p > 0) warn("Phase: $p")
         buffer.clear().put(state or p).putInt(slot)
         states.send(buffer.flip())
         log("Sent State: ${state or p} - $slot")
@@ -71,7 +69,6 @@ suspend fun Node(
             else -> VOTE_LOST
         } or p
         buffer.clear().put(vote).putInt(slot)
-        log("Trying to send vote!")
         votes.send(buffer.flip())
         log("Sent Vote: $vote - $slot")
         zero = 0; one = 0
@@ -96,7 +93,7 @@ suspend fun Node(
                 zero > 0 -> STATE_ZERO
                 one > 0 -> STATE_ONE
                 else -> {
-                    println("Rolling: $p")
+                    warn("Rolling: $p")
                     if (random.nextBoolean())
                         STATE_ZERO else STATE_ONE
                 }
@@ -118,7 +115,7 @@ suspend fun Node(
                 random = Random(current)
                 while (isActive && index < majority) {
                     val proposal = if (saved[current]?.isNotEmpty() == true) {
-                        log("Used Saved")
+                        warn("Used Saved")
                         saved[current]!!.pollLast()
                     } else {
                         proposes.receive(buffer.clear())
