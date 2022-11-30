@@ -53,12 +53,12 @@ suspend fun Node(
         states.send(buffer.flip())
         log("Sent State: ${state or p} - $slot")
         var zero = 0; var one = 0; var lost = 0
-        while (active() && zero + one < majority) {
+        while (zero + one < majority) {
             states.receive(buffer.clear().limit(5))
             val op = buffer.get(0)
             val depth = buffer.getInt(1)
             if (depth == slot) log("Got State ${zero + one}: $op - $slot")
-            if (depth > slot) error("State Too High: $depth")
+            if (depth > slot) warn("State Too High: $depth")
             if (depth == slot) when (op) {
                 STATE_ONE or p -> ++one
                 STATE_ZERO or p -> ++zero
@@ -74,12 +74,12 @@ suspend fun Node(
         log("Sent Vote: $vote - $slot")
         zero = 0; one = 0
         //TODO can we reduce the amount we wait for here.
-        while (active() && zero + one + lost < majority) {
+        while (zero + one + lost < majority) {
             votes.receive(buffer.clear().limit(5))
             val op = buffer.get(0)
             val depth = buffer.getInt(1)
-            if (depth == slot) log("Got Vote ${zero + one + lost}: $op - $slot")
-            if (depth > slot) error("Vote Too High: $depth")
+            if (depth == slot) log("Got Vote (${zero + one + lost}/$majority): $op - $slot")
+            if (depth > slot) warn("Vote Too High: $depth")
             if (depth == slot) when (op) {
                 VOTE_ONE or p -> ++one
                 VOTE_ZERO or p -> ++zero
@@ -114,7 +114,7 @@ suspend fun Node(
                 var index = 0
                 //create this lazily
                 random = Random(current)
-                while (isActive && index < majority) {
+                while (index < majority) {
                     val proposal = if (saved[current]?.isNotEmpty() == true) {
                         warn("Used Saved")
                         saved[current]!!.pollLast()
