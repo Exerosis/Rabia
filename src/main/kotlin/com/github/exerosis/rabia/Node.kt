@@ -57,7 +57,7 @@ suspend fun Node(
             states.receive(buffer.clear().limit(5))
             val op = buffer.get(0)
             val depth = buffer.getInt(1)
-            if (depth == slot) log("Got State ${zero + one}: $op - $slot")
+            if (depth == slot) log("Got State (${zero + one}/$majority): $op - $slot")
             if (depth > slot) warn("State Too High: $depth")
             if (depth == slot) when (op) {
                 STATE_ONE or p -> ++one
@@ -107,7 +107,7 @@ suspend fun Node(
         val proposed = messages()
         val current = slot()
         try {
-            withTimeout(1.seconds) {
+            withTimeout(5.seconds) {
                 log("Proposed: $proposed - $current")
                 buffer.clear().putLong(proposed).putInt(current)
                 proposes.send(buffer.flip())
@@ -133,16 +133,18 @@ suspend fun Node(
                     var count = 1
                     for (i in 0 until index)
                         if (proposals[i] == proposal && ++count >= majority) {
-                            log("Countered: $proposal($count/$majority) - $current")
+                            log("Countered ($count/$majority): $proposal - $current")
                             return@withTimeout commit(current, phase(0, STATE_ONE, proposals[i], current))
                         }
-                    log("Countered: $proposal($count/$majority) - $current")
+                    log("Countered ($count/$majority): $proposal - $current")
                     proposals[index++] = proposal
                 }
                 commit(current, phase(0, STATE_ZERO, -1, current))
             }
-        } catch (reason: TimeoutCancellationException) {
-            warn("Timed Out")
+        } catch (reason: Throwable) {
+            if (reason is TimeoutCancellationException)
+                warn("Timed Out")
+            else throw reason
             commit(current, 0)
         }
     }
