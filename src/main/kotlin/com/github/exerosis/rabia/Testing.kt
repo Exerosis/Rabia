@@ -17,6 +17,13 @@ suspend fun log(message: String) {
         System.out.flush()
     }
 }
+suspend fun warn(message: String) {
+    val ctx = currentCoroutineContext()[CoroutineName]
+    if (WARN) {
+        println("[${ctx?.name}] $message")
+        System.out.flush()
+    }
+}
 
 val hostname = InetAddress.getLocalHost().hostName.split('.')[0]
 fun current() = when (hostname) {

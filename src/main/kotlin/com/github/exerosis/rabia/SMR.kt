@@ -78,11 +78,11 @@ fun CoroutineScope.SMR(
         launch(CoroutineName("Node-${port - 1000}")) { try {
             var last = -1L; var slot = i
             Node(pipes[i], address, n, { depth, id ->
-                if (depth != slot) log("DEPTH OFF: $depth != $slot")
+                if (depth != slot) warn("DEPTH OFF: $depth != $slot")
 //                println("$depth - $id != $last")
 //                println("Depth: $depth Id: $id - ${messages[id]}")
                 if (id != last)
-                    println("[Node-${port - 1000}] Bad Sync")
+                    warn("[Node-${port - 1000}] Bad Sync: $id != $last")
 //                if (id == 0L) { error("Trying to erase!") }
                 if (depth < slot) { error("Trying to reinsert!") } //is this actually an issue?
                 if (depth % pipes.size != i) { error("Trying to pipe mix!") }
