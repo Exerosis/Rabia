@@ -140,7 +140,7 @@ suspend fun Node(
                 commit(current, phase(0, STATE_ZERO, -1, current))
             }
         } catch (reason: Throwable) {
-            log("Timed Out: $reason")
+            warn("Timed Out: $reason")
             commit(current, 0)
         }
     }
