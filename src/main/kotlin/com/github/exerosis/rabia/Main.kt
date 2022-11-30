@@ -19,12 +19,11 @@ const val DEBUG = false
 const val WARN = false
 const val SERVER = false
 
-@OptIn(ExperimentalTime::class)
 fun run() = runBlocking(dispatcher) {
     println("Hostname: $hostname")
     println("Current: ${current()}")
     println("Other: ${other()}")
-    val address = getLocalHost()
+    val address = getByName("eno2")
     println(address)
 //    val repairs = arrayOf(
 //        InetSocketAddress(other(), 2000),
