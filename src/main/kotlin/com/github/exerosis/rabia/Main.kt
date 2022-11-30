@@ -17,8 +17,8 @@ import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
 import kotlin.time.TimeSource.Monotonic.markNow
 
-const val DEBUG = true
-const val WARN = true
+const val DEBUG = false
+const val WARN = false
 const val SERVER = false
 
 @OptIn(ExperimentalTime::class)
