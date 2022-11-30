@@ -59,6 +59,7 @@ fun CoroutineScope.SMR(
     }
     suspend fun catchup() {
         val to = using.minOrNull()?.minus(1) ?: highest.get()
+        println("${((committed.get() + 1)..to).count()}/s")
 //        println("InUse: $using Committed: $committed To: $to Highest: ${highest.get()}")
         for (i in (committed.get() + 1)..to) {
             if (log[i] == -1L) continue
