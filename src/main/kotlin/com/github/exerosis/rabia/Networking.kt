@@ -90,13 +90,12 @@ suspend fun TCP(
                     }
                 }
             }.awaitAll()
-            if (!active()) error("Inactive")
         }
         override suspend fun receive(buffer: ByteBuffer) {
-            while (active()) {
+            while (true) {
                 connections.forEach {
                     if (it.read(buffer) != 0) {
-                        while (active() && buffer.hasRemaining()) {
+                        while (buffer.hasRemaining()) {
                             it.read(buffer)
                             Thread.onSpinWait()
                         }
@@ -105,7 +104,6 @@ suspend fun TCP(
                 }
                 Thread.onSpinWait()
             }
-            error("Inactive")
         }
     }
 }
