@@ -137,6 +137,7 @@ fun CoroutineScope.SMR(
                     messages[id] = read.bytes(read.int()).toString(UTF_8)
                     val instance = instances[abs(id % instances.size).toInt()]
                     instance.offer(id)
+                    println("Got Message From Client")
                 }; close()
             } }
         }
