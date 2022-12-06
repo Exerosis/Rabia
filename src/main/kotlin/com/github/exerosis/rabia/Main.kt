@@ -17,7 +17,7 @@ import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
 
 const val DEBUG = false
-const val WARN = true
+const val WARN = false
 const val SERVER = false
 
 fun run() = runBlocking(dispatcher) {
@@ -66,7 +66,7 @@ fun run() = runBlocking(dispatcher) {
         ) {
             processed.incrementAndGet()
 //            if ("$index" != it) error("IDk why this is happening :D")
-            println("${index++}: $it")
+//            println("${index++}: $it")
         }
 
 //        launch {
