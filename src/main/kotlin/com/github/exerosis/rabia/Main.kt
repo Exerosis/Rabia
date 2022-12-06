@@ -157,4 +157,4 @@ fun test4() = runBlocking(dispatcher) {
         test.receive(buffer)
     }
 }
-fun main() = run()
+fun main() = test4()
