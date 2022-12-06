@@ -47,6 +47,10 @@ suspend fun Node(
     val proposals = LongArray(majority)
     var random = Random(0)
     log("N: $n F: $f Majority: $majority")
+    val savedProposals = HashMap<Int, LinkedList<Long>>()
+    val savedVotes = HashMap<Int, LinkedList<Byte>>()
+    val savedStates = HashMap<Int, LinkedList<Byte>>()
+
     suspend fun phase(p: Byte, state: Byte, common: Long, slot: Int): Long {
         if (p > 0) warn("Phase: $p")
         buffer.clear().put(state or p).putInt(slot)
@@ -54,12 +58,22 @@ suspend fun Node(
         log("Sent State: ${state or p} - $slot")
         var zero = 0; var one = 0; var lost = 0
         while (zero + one < majority) {
-            states.receive(buffer.clear().limit(5))
-            val op = buffer.get(0)
-            val depth = buffer.getInt(1)
-            if (depth == slot) log("Got State (${zero + one}/$majority): $op - $slot")
-            if (depth > slot) warn("State Too High: $depth")
-            if (depth == slot) when (op) {
+            val op = if (savedStates[slot]?.isNotEmpty() == true) {
+                warn("Used Saved State")
+                savedStates[slot]!!.pollLast()
+            } else {
+                states.receive(buffer.clear().limit(5))
+                val op = buffer.get(0)
+                val depth = buffer.getInt(1)
+                if (depth < slot) continue
+                if (depth > slot) {
+                    savedStates.getOrPut(depth) { LinkedList() }.offerFirst(op)
+                    warn("Saved State")
+                    continue
+                }; op
+            }
+            log("Got State (${zero + one}/$majority): $op - $slot")
+            when (op) {
                 STATE_ONE or p -> ++one
                 STATE_ZERO or p -> ++zero
             }
@@ -75,12 +89,21 @@ suspend fun Node(
         zero = 0; one = 0
         //TODO can we reduce the amount we wait for here.
         while (zero + one + lost < majority) {
-            votes.receive(buffer.clear().limit(5))
-            val op = buffer.get(0)
-            val depth = buffer.getInt(1)
-            if (depth == slot) log("Got Vote (${zero + one + lost}/$majority): $op - $slot")
-            if (depth > slot) warn("Vote Too High: $depth")
-            if (depth == slot) when (op) {
+            val op = if (savedVotes[slot]?.isNotEmpty() == true) {
+                warn("Used Saved State")
+                savedVotes[slot]!!.pollLast()
+            } else {
+                votes.receive(buffer.clear().limit(5))
+                val op = buffer.get(0)
+                val depth = buffer.getInt(1)
+                if (depth < slot) continue
+                if (depth > slot) {
+                    savedVotes.getOrPut(depth) { LinkedList() }.offerFirst(op)
+                    warn("Saved State")
+                    continue
+                }; op
+            }
+            when (op) {
                 VOTE_ONE or p -> ++one
                 VOTE_ZERO or p -> ++zero
                 VOTE_LOST or p -> ++lost
@@ -102,7 +125,7 @@ suspend fun Node(
         )
     }
 
-    val saved = HashMap<Int, LinkedList<Long>>()
+
     outer@ while (proposes.isOpen) {
         val proposed = messages()
         val current = slot()
@@ -115,9 +138,9 @@ suspend fun Node(
                 //create this lazily
                 random = Random(current)
                 while (index < majority) {
-                    val proposal = if (saved[current]?.isNotEmpty() == true) {
+                    val proposal = if (savedProposals[current]?.isNotEmpty() == true) {
                         warn("Used Saved")
-                        saved[current]!!.pollLast()
+                        savedProposals[current]!!.pollLast()
                     } else {
                         proposes.receive(buffer.clear())
                         val proposal = buffer.getLong(0)
@@ -125,7 +148,7 @@ suspend fun Node(
                         if (depth < current) continue
                         if (current < depth) {
                             warn("Added Saved")
-                            saved.getOrPut(depth) { LinkedList() }.offerFirst(proposal)
+                            savedProposals.getOrPut(depth) { LinkedList() }.offerFirst(proposal)
                             continue
                         }
                         proposal
