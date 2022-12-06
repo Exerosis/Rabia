@@ -138,4 +138,23 @@ fun test3() = runBlocking(dispatcher) {
 //    println(test)
     println("Done!")
 }
+
+fun test4() = runBlocking(dispatcher) {
+    val address = NetworkInterface.networkInterfaces().asSequence().flatMap {
+        it.inetAddresses.asSequence()
+    }.find { println(it); "192.168.1" in it.toString() }!!
+    println(address)
+    if (address.hostName == "192.168.1.5") {
+        val test = TCP(address, 1000, 65000,
+            InetSocketAddress("192.168.1.4", 1000)
+        )
+        test.send(ByteBuffer.allocateDirect(8).putLong(10L).flip())
+    } else {
+        val test = TCP(address, 1000, 65000,
+            InetSocketAddress("192.168.1.5", 1000)
+        )
+        val buffer = ByteBuffer.allocateDirect(8)
+        test.receive(buffer)
+    }
+}
 fun main() = run()
