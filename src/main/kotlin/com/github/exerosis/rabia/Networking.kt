@@ -85,9 +85,13 @@ suspend fun TCP(
             connections.map {
                 val copy = buffer.duplicate()
                 scope.async {
-                    while (copy.hasRemaining()) {
-                        it.write(copy)
-                        Thread.onSpinWait()
+                    try {
+                        while (copy.hasRemaining()) {
+                            it.write(copy)
+                            Thread.onSpinWait()
+                        }
+                    } catch (reason: Throwable) {
+                        reason.printStackTrace()
                     }
                 }
             }.awaitAll()
