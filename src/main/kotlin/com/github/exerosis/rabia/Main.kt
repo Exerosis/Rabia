@@ -16,7 +16,7 @@ import kotlin.streams.asSequence
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
 
-const val DEBUG = true
+const val DEBUG = false
 const val WARN = true
 const val SERVER = false
 
