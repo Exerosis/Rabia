@@ -36,11 +36,9 @@ suspend fun Node(
 ) {
     val f = (n / 2) - 1
     val proposes = TCP(address, port, 65527, *nodes)
-    println("here")
     val states = TCP(address, port + 1, 65527, *nodes.map {
         InetSocketAddress(it.address, it.port + 1)
     }.toTypedArray())
-    println("next")
     val votes = TCP(address, port + 2, 65527, *nodes.map {
         InetSocketAddress(it.address, it.port + 2)
     }.toTypedArray())
