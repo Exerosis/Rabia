@@ -145,16 +145,22 @@ fun test4() = runBlocking(dispatcher) {
     }.find { println(it); "192.168.1" in it.toString() }!!
     println(address)
     if (address.hostName == "192.168.1.5") {
+        println("I'm 5")
         val test = TCP(address, 1000, 65000,
             InetSocketAddress("192.168.1.4", 1000)
         )
+        println("Connected")
         test.send(ByteBuffer.allocateDirect(8).putLong(10L).flip())
+        println("Sent")
     } else {
+        println("i'm 4")
         val test = TCP(address, 1000, 65000,
             InetSocketAddress("192.168.1.5", 1000)
         )
+        println("Connected")
         val buffer = ByteBuffer.allocateDirect(8)
         test.receive(buffer)
+        println("Received: ${buffer.flip().getLong()}")
     }
 }
 fun main() = test4()
