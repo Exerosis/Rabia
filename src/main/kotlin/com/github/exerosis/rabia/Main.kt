@@ -144,7 +144,7 @@ fun test4() = runBlocking(dispatcher) {
         it.inetAddresses.asSequence()
     }.find { println(it); "192.168.1" in it.toString() }!!
     println(address)
-    if (address.toString() == "192.168.1.5") {
+    if ("192.168.1.5" in address.toString()) {
         println("I'm 5")
         val test = TCP(address, 1000, 65000,
             InetSocketAddress("192.168.1.4", 1000)
