@@ -10,6 +10,7 @@ import java.nio.ByteBuffer
 import java.nio.channels.DatagramChannel
 import java.nio.channels.ServerSocketChannel
 import java.nio.channels.SocketChannel
+import java.util.concurrent.ConcurrentLinkedQueue
 
 const val BROADCAST = "230.0.0.0" //230
 
@@ -54,7 +55,7 @@ suspend fun TCP(
     server.configureBlocking(false)
     server.bind(InetSocketAddress(address, port))
     val scope = CoroutineScope(dispatcher)
-    val connections = ArrayList<SocketChannel>()
+    val connections = ConcurrentLinkedQueue<SocketChannel>()
     scope.launch {
         while (server.isOpen && isActive)
             server.accept()?.apply {
