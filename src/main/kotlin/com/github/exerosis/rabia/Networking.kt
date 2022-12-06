@@ -78,6 +78,7 @@ suspend fun TCP(
             })
         } catch (_: Throwable) {}}
     }.forEach { it.await() }
+    println("awaited all")
     return object : Multicaster {
         override val isOpen = server.isOpen
         override fun close() = runBlocking { scope.cancel(); server.close() }
