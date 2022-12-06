@@ -106,7 +106,7 @@ fun CoroutineScope.SMR(
                     //Will this be enough to keep the logs properly cleared?
                     messages.remove(log[slot])
                     log[slot] = 0L
-                    if (count.incrementAndGet() == 100) {
+                    if (count.incrementAndGet() == 1000) {
                         val amount = count.getAndSet(0)
                         println("$amount in ${mark.getAndSet(markNow()).elapsedNow()}")
                     }
