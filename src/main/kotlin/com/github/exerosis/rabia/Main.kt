@@ -163,4 +163,4 @@ fun test4() = runBlocking(dispatcher) {
         println("Received: ${buffer.flip().getLong()}")
     }
 }
-fun main() = test4()
+fun main() = run()

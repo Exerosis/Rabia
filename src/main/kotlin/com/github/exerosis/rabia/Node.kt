@@ -42,6 +42,7 @@ suspend fun Node(
     val votes = TCP(address, port + 2, 65527, *nodes.map {
         InetSocketAddress(it.address, it.port + 2)
     }.toTypedArray())
+    log("Established Peer Connections")
     val buffer = allocateDirect(12)
     val majority = (n / 2) + 1
     val proposals = LongArray(majority)
