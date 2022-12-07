@@ -59,7 +59,7 @@ suspend fun Node(
         var zero = 0; var one = 0; var lost = 0
         while (zero + one < majority) {
             val op = if (savedStates[slot]?.isNotEmpty() == true) {
-                warn("Used Saved State")
+//                warn("Used Saved State")
                 savedStates[slot]!!.pollLast()
             } else {
                 states.receive(buffer.clear().limit(5))
@@ -68,7 +68,7 @@ suspend fun Node(
                 if (depth < slot) continue
                 if (depth > slot) {
                     savedStates.getOrPut(depth) { LinkedList() }.offerFirst(op)
-                    warn("Saved State")
+//                    warn("Saved State")
                     continue
                 }; op
             }
@@ -90,7 +90,7 @@ suspend fun Node(
         //TODO can we reduce the amount we wait for here.
         while (zero + one + lost < majority) {
             val op = if (savedVotes[slot]?.isNotEmpty() == true) {
-                warn("Used Saved State")
+//                warn("Used Saved State")
                 savedVotes[slot]!!.pollLast()
             } else {
                 votes.receive(buffer.clear().limit(5))
@@ -99,7 +99,7 @@ suspend fun Node(
                 if (depth < slot) continue
                 if (depth > slot) {
                     savedVotes.getOrPut(depth) { LinkedList() }.offerFirst(op)
-                    warn("Saved State")
+//                    warn("Saved State")
                     continue
                 }; op
             }
@@ -139,7 +139,7 @@ suspend fun Node(
                 random = Random(current)
                 while (index < majority) {
                     val proposal = if (savedProposals[current]?.isNotEmpty() == true) {
-                        warn("Used Saved")
+//                        warn("Used Saved")
                         savedProposals[current]!!.pollLast()
                     } else {
                         proposes.receive(buffer.clear())
@@ -147,7 +147,7 @@ suspend fun Node(
                         val depth = buffer.getInt(8)
                         if (depth < current) continue
                         if (current < depth) {
-                            warn("Added Saved")
+//                            warn("Added Saved")
                             savedProposals.getOrPut(depth) { LinkedList() }.offerFirst(proposal)
                             continue
                         }
