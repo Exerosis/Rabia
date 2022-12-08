@@ -168,10 +168,12 @@ suspend fun Node(
                 commit(current, phase(0, STATE_ZERO, -1, current))
             }
         } catch (reason: Throwable) {
-            if (reason is TimeoutCancellationException)
+            if (reason is TimeoutCancellationException) {
                 warn("Timed Out")
-            else throw reason
+                break@outer
+            } else throw reason
             commit(current, 0)
         }
     }
+    log("Died :(")
 }
