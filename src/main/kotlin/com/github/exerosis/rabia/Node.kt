@@ -110,10 +110,12 @@ suspend fun Node(
             }
         }
         log("End Phase: $p - $slot")
+        val next = (p + 1).toByte()
+        if (next > 120) error("State to high!")
         return if (zero >= f + 1) -1
         else if (one >= f + 1) common and MASK_MID
         else phase(
-            (p + 1).toByte(), when {
+            next, when {
                 zero > 0 -> STATE_ZERO
                 one > 0 -> STATE_ONE
                 else -> {
