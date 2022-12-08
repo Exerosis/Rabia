@@ -93,7 +93,7 @@ fun CoroutineScope.SMR(
                 if (depth < slot) { error("Trying to reinsert!") } //is this actually an issue?
                 if (depth % pipes.size != i) { error("Trying to pipe mix!") }
                 if (id != last) {
-//                    offer(last)
+                    offer(last)
                     if (depth > slot && id == 0L) repair(slot, depth)
                 } else {
                     log[depth % log.length()] = id
