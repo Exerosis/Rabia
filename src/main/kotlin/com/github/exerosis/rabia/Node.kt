@@ -34,7 +34,9 @@ suspend fun Node(
     slot: suspend () -> (Int),
     vararg nodes: InetSocketAddress
 ) {
-    val f = (n / 2) - 1
+    val f = n / 2
+    val majority = (n / 2) + 1
+    log("N: $n F: $f Majority: $majority")
     val proposes = TCP(address, port, 65527, *nodes)
     val states = TCP(address, port + 1, 65527, *nodes.map {
         InetSocketAddress(it.address, it.port + 1)
@@ -43,13 +45,26 @@ suspend fun Node(
         InetSocketAddress(it.address, it.port + 2)
     }.toTypedArray())
     val buffer = allocateDirect(12)
-    val majority = (n / 2) + 1
+
     val proposals = LongArray(majority)
     var random = Random(0)
-    log("N: $n F: $f Majority: $majority")
+
     val savedProposals = HashMap<Int, LinkedList<Long>>()
     val savedVotes = HashMap<Int, LinkedList<Byte>>()
     val savedStates = HashMap<Int, LinkedList<Byte>>()
+
+    fun HashMap<Int, LinkedList<Long>>.poll(depth: Int): Long? {
+        val list = this[depth]
+        val it = list?.pollLast()
+        if (list?.isEmpty() == true) this.remove(depth)
+        return it
+    }
+    fun HashMap<Int, LinkedList<Byte>>.poll(depth: Int): Byte? {
+        val list = this[depth]
+        val it = list?.pollLast()
+        if (list?.isEmpty() == true) this.remove(depth)
+        return it
+    }
 
     suspend fun phase(p: Byte, state: Byte, common: Long, slot: Int): Long {
         if (p > 0) warn("Phase: $p")
@@ -58,21 +73,19 @@ suspend fun Node(
         log("Sent State: ${state or p} - $slot")
         var zero = 0; var one = 0; var lost = 0
         while (zero + one < majority) {
-            val op = if (savedStates[slot]?.isNotEmpty() == true) {
-//                warn("Used Saved State")
-                savedStates[slot]!!.pollLast()
-            } else {
+            var op = savedStates.poll(slot)
+            if (op == null) {
                 states.receive(buffer.clear().limit(5))
-                val op = buffer.get(0)
+                op = buffer.get(0)
                 val depth = buffer.getInt(1)
                 if (depth < slot) continue
                 if (depth > slot) {
                     savedStates.getOrPut(depth) { LinkedList() }.offerFirst(op)
 //                    warn("Saved State")
                     continue
-                }; op
+                }
             }
-            log("Got State (${zero + one}/$majority): $op - $slot")
+            log("Got State (${zero + one + 1}/$majority): $op - $slot")
             when (op) {
                 STATE_ONE or p -> ++one
                 STATE_ZERO or p -> ++zero
@@ -90,20 +103,19 @@ suspend fun Node(
         zero = 0; one = 0
         //TODO can we reduce the amount we wait for here.
         while (zero + one + lost < majority) {
-            val op = if (savedVotes[slot]?.isNotEmpty() == true) {
-//                warn("Used Saved State")
-                savedVotes[slot]!!.pollLast()
-            } else {
+            var op = savedVotes.poll(slot)
+            if (op == null) {
                 votes.receive(buffer.clear().limit(5))
-                val op = buffer.get(0)
+                op = buffer.get(0)
                 val depth = buffer.getInt(1)
                 if (depth < slot) continue
                 if (depth > slot) {
                     savedVotes.getOrPut(depth) { LinkedList() }.offerFirst(op)
 //                    warn("Saved State")
                     continue
-                }; op
+                }
             }
+            log("Got State (${zero + one + majority + 1}/$majority): $op - $slot")
             when (op) {
                 VOTE_ONE or p -> ++one
                 VOTE_ZERO or p -> ++zero
@@ -143,12 +155,10 @@ suspend fun Node(
                 //create this lazily
                 random = Random(current)
                 while (index < majority) {
-                    val proposal = if (savedProposals[current]?.isNotEmpty() == true) {
-//                        warn("Used Saved")
-                        savedProposals[current]!!.pollLast()
-                    } else {
+                    var proposal = savedProposals.poll(current)
+                    if (proposal == null) {
                         proposes.receive(buffer.clear())
-                        val proposal = buffer.getLong(0)
+                        proposal = buffer.getLong(0)
                         val depth = buffer.getInt(8)
                         if (depth < current) continue
                         if (current < depth) {
@@ -156,7 +166,6 @@ suspend fun Node(
                             savedProposals.getOrPut(depth) { LinkedList() }.offerFirst(proposal)
                             continue
                         }
-                        proposal
                     }
                     var count = 1
                     for (i in 0 until index)
