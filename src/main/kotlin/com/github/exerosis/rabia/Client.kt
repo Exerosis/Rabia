@@ -30,7 +30,7 @@ fun main() = runBlocking(dispatcher) {
         InetSocketAddress("192.168.1.1", 1000),
         InetSocketAddress("192.168.1.2", 1000),
         InetSocketAddress("192.168.1.3", 1000),
-        InetSocketAddress("192.168.1.4", 1000),
+//        InetSocketAddress("192.168.1.4", 1000),
     )
     val addresses2 = arrayOf<InetSocketAddress>(
 //        InetSocketAddress(current(), 1000),
