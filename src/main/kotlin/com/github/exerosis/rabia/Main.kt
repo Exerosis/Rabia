@@ -42,13 +42,13 @@ fun run() = runBlocking(dispatcher) {
         InetSocketAddress("192.168.1.1", 2000),
         InetSocketAddress("192.168.1.2", 2000),
         InetSocketAddress("192.168.1.3", 2000),
-        InetSocketAddress("192.168.1.4", 2000),
+//        InetSocketAddress("192.168.1.4", 2000),
     )
     val nodes = arrayOf(
         InetSocketAddress("192.168.1.1", 3000),
         InetSocketAddress("192.168.1.2", 3000),
         InetSocketAddress("192.168.1.3", 3000),
-        InetSocketAddress("192.168.1.4", 3000),
+//        InetSocketAddress("192.168.1.4", 3000),
     )
 
     val network = NetworkInterface.getByInetAddress(address)
@@ -59,7 +59,7 @@ fun run() = runBlocking(dispatcher) {
         //and runs weak mvc instances on 2000-2002
         val processed = AtomicInteger(0)
         var index = 0
-        SMR(4,
+        SMR(3,
             repair=2000 + i, repairs,
             pipes=arrayOf(3000 + (i * 4)), nodes,
             port=1000 + i, address

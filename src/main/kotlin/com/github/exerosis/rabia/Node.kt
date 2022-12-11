@@ -135,7 +135,6 @@ suspend fun Node(
         val current = slot()
         try {
             withTimeout(5.seconds) {
-                error("Always")
                 log("Proposals: ${savedProposals.size} Votes: ${savedVotes.size} States: ${savedStates.size}")
                 log("Proposed: $proposed - $current")
                 buffer.clear().putLong(proposed).putInt(current)
