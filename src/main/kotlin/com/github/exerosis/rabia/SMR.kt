@@ -108,7 +108,7 @@ fun CoroutineScope.SMR(
                     log[slot] = 0L
                     if (count.incrementAndGet() == 1000) {
                         val amount = count.getAndSet(0)
-                        println("$amount in ${mark.getAndSet(markNow()).elapsedNow()}")
+                        println("$amount in ${mark.getAndSet(markNow()).elapsedNow()} - $size")
                     }
                 }
             }, {
