@@ -157,14 +157,15 @@ suspend fun Node(
         try {
             val started = TimeSource.Monotonic.markNow()
             withTimeout(5.seconds) {
-                log("Proposals: $proposed - $current | ${savedProposals.size} Votes: ${savedVotes.size} States: ${savedStates.size}")
+                log("[${Thread.currentThread().name}]Proposals: $proposed - $current | ${savedProposals.size} Votes: ${savedVotes.size} States: ${savedStates.size}")
 //                log("Proposed: ")
                 buffer.clear().putLong(proposed).putInt(current)
                 proposes.send(buffer.flip())
                 var index = 0
 
                 //Removed all messages on receiving
-                Thread.sleep(0L, 100_000)
+                val test = System.nanoTime() + 100_000
+                while (System.nanoTime() < test) {}
                 //create this lazily
                 random = Random(current)
                 while (index < majority) {
