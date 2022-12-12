@@ -92,7 +92,7 @@ suspend fun Node(
                     continue
                 }
             }
-            log("Got State (${zero + one + 1}/$majority): $op - $slot @$from")//candidate
+//            log("Got State (${zero + one + 1}/$majority): $op - $slot @$from")//candidate
             when (op) {
                 STATE_ONE or p -> ++one
                 STATE_ZERO or p -> ++zero
@@ -170,7 +170,7 @@ suspend fun Node(
                     var from: SocketAddress = loopback
                     var proposal = savedProposals.poll(current)
                     if (proposal == null) {
-//                        log("Network") //candidate
+                        log("Network") //candidate
                         from = proposes.receive(buffer.clear())
                         proposal = buffer.getLong(0)
                         val depth = buffer.getInt(8)
@@ -180,14 +180,14 @@ suspend fun Node(
                             savedProposals.getOrPut(depth) { LinkedList() }.offerFirst(proposal)
                             continue
                         }
-                    }// else log("Cached") //candidate
+                    } else log("Cached") //candidate
                     var count = 1
                     for (i in 0 until index)
                         if (proposals[i] == proposal && ++count >= majority) {
-//                            log("Countered ($count/$majority): $proposal - $current @$from")//candidate
+                            log("Countered ($count/$majority): $proposal - $current @$from")//candidate
                             return@withTimeout commit(current, phase(0, STATE_ONE, proposals[i], current))
                         }
-//                    log("Countered ($count/$majority): $proposal - $current @$from")//candidate
+                    log("Countered ($count/$majority): $proposal - $current @$from")//candidate
                     proposals[index++] = proposal
                 }
                 commit(current, phase(0, STATE_ZERO, -1, current))
