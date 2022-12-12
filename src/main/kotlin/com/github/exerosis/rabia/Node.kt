@@ -153,7 +153,7 @@ suspend fun Node(
         )
     }
 
-    //
+    //TODO Figure out why it sometimes visits the network many many times in a row (but doesn't lose sync in the process)
     outer@ while (proposes.isOpen) {
         val proposed = messages()
         val current = slot()
@@ -179,7 +179,10 @@ suspend fun Node(
                         from = proposes.receive(buffer.clear())
                         proposal = buffer.getLong(0)
                         val depth = buffer.getInt(8)
-                        if (depth < current) continue
+                        if (depth < current) {
+                            println("OLD: $depth vs $current")
+                            continue
+                        }
                         if (current < depth) {
 //                            warn("Added Saved")
                             savedProposals.getOrPut(depth) { LinkedList() }.offerFirst(proposal)
