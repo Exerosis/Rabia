@@ -174,7 +174,7 @@ suspend fun Node(
                     var from: SocketAddress = loopback
                     var proposal = savedProposals.poll(current)
                     if (proposal == null) {
-                        log("Network") //candidate
+//                        log("Network") //candidate
                         from = proposes.receive(buffer.clear())
                         proposal = buffer.getLong(0)
                         val depth = buffer.getInt(8)
@@ -184,7 +184,7 @@ suspend fun Node(
                             savedProposals.getOrPut(depth) { LinkedList() }.offerFirst(proposal)
                             continue
                         }
-                    } else log("Cached") //candidate
+                    } //else log("Cached") //candidate
                     var count = 1
                     for (i in 0 until index)
                         if (proposals[i] == proposal && ++count >= majority) {
