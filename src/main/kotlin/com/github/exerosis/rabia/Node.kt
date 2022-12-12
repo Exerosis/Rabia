@@ -161,6 +161,7 @@ suspend fun Node(
             val started = TimeSource.Monotonic.markNow()
             withTimeout(5.seconds) {
                 log("Proposals: $proposed - $current | ${savedProposals.size} Votes: ${savedVotes.size} States: ${savedStates.size}")
+//                log("Proposed: ")
                 buffer.clear().putLong(proposed).putInt(current)
                 proposes.send(buffer.flip())
                 var index = 0
