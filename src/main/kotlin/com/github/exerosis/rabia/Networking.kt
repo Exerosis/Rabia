@@ -4,6 +4,7 @@ import kotlinx.coroutines.*
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.NetworkInterface.getByInetAddress
+import java.net.SocketAddress
 import java.net.StandardProtocolFamily.INET
 import java.net.StandardSocketOptions.*
 import java.nio.ByteBuffer
@@ -16,7 +17,7 @@ const val BROADCAST = "230.0.0.0" //230
 
 interface Multicaster : AutoCloseable {
     suspend fun send(buffer: ByteBuffer)
-    suspend fun receive(buffer: ByteBuffer)
+    suspend fun receive(buffer: ByteBuffer): SocketAddress
     val isOpen: Boolean
 }
 
@@ -41,8 +42,8 @@ fun UDP(
         override suspend fun send(buffer: ByteBuffer) {
             while (active() && channel.send(buffer, broadcast) == 0) { Thread.onSpinWait() }
         }
-        override suspend fun receive(buffer: ByteBuffer)
-            { while (active() && channel.receive(buffer) == null) { Thread.onSpinWait() } }
+        override suspend fun receive(buffer: ByteBuffer) = TODO()
+//            { while (active() && channel.receive(buffer) == null) { Thread.onSpinWait() } }
     }
 }
 
@@ -96,7 +97,7 @@ suspend fun TCP(
                 }
             }.awaitAll()
         }
-        override suspend fun receive(buffer: ByteBuffer) {
+        override suspend fun receive(buffer: ByteBuffer): SocketAddress {
             while (true) {
                 connections.forEach {
                     if (it.read(buffer) != 0) {
@@ -104,7 +105,7 @@ suspend fun TCP(
                             it.read(buffer)
                             Thread.onSpinWait()
                         }
-                        return
+                        return it.remoteAddress
                     }
                 }
                 Thread.onSpinWait()

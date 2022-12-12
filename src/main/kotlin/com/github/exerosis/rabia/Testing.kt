@@ -11,17 +11,25 @@ val executor: ExecutorService = Executors.newCachedThreadPool()
 val dispatcher = executor.asCoroutineDispatcher()
 
 suspend fun log(message: String) {
-    val ctx = currentCoroutineContext()[CoroutineName]
-    if (DEBUG) {
-        println("[${ctx?.name}] $message")
-        System.out.flush()
+    try {
+        val ctx = currentCoroutineContext()[CoroutineName]
+        if (DEBUG) {
+            println("[${ctx?.name}] $message")
+            System.out.flush()
+        }
+    } catch (reason: Throwable) {
+        reason.printStackTrace()
     }
 }
 suspend fun warn(message: String) {
-    val ctx = currentCoroutineContext()[CoroutineName]
-    if (WARN) {
-        println("[${ctx?.name}] $message")
-        System.out.flush()
+    try {
+        val ctx = currentCoroutineContext()[CoroutineName]
+        if (WARN) {
+            println("[${ctx?.name}] $message")
+            System.out.flush()
+        }
+    } catch (reason: Throwable) {
+        reason.printStackTrace()
     }
 }
 
