@@ -92,7 +92,7 @@ suspend fun Node(
                     continue
                 }
             }
-//            log("Got State (${zero + one + 1}/$majority): $op - $slot @$from")//candidate
+            log("Got State (${zero + one + 1}/$majority): $op - $slot @$from")//candidate
             when (op) {
                 STATE_ONE or p -> ++one
                 STATE_ZERO or p -> ++zero
@@ -123,7 +123,7 @@ suspend fun Node(
                     continue
                 }
             }
-//            log("Got Vote (${zero + one + lost + 1}/$majority): $op - $slot @$from")//candidate
+            log("Got Vote (${zero + one + lost + 1}/$majority): $op - $slot @$from")//candidate
             when (op) {
                 VOTE_ONE or p -> ++one
                 VOTE_ZERO or p -> ++zero
@@ -184,10 +184,10 @@ suspend fun Node(
                     var count = 1
                     for (i in 0 until index)
                         if (proposals[i] == proposal && ++count >= majority) {
-                            log("Countered ($count/$majority): $proposal - $current @$from")//candidate
+//                            log("Countered ($count/$majority): $proposal - $current @$from")//candidate
                             return@withTimeout commit(current, phase(0, STATE_ONE, proposals[i], current))
                         }
-                    log("Countered ($count/$majority): $proposal - $current @$from")//candidate
+//                    log("Countered ($count/$majority): $proposal - $current @$from")//candidate
                     proposals[index++] = proposal
                 }
                 commit(current, phase(0, STATE_ZERO, -1, current))
