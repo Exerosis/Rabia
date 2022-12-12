@@ -6,6 +6,7 @@ import java.net.InetSocketAddress
 import java.net.SocketAddress
 import java.nio.ByteBuffer.allocateDirect
 import java.util.*
+import java.util.concurrent.Executors
 import kotlin.experimental.or
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
@@ -27,6 +28,8 @@ const val MASK_MID = (0b11L shl 62).inv()
 
 suspend fun active() = currentCoroutineContext().isActive
 
+val test = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
+
 @OptIn(ExperimentalTime::class)
 suspend fun Node(
     port: Int, address: InetAddress, n: Int,
@@ -34,7 +37,7 @@ suspend fun Node(
     messages: suspend () -> (Long),
     slot: suspend () -> (Int),
     vararg nodes: InetSocketAddress
-) {
+) = withContext(test) {
     val f = n / 2
     val majority = (n / 2) + 1
     log("N: $n F: $f Majority: $majority")
