@@ -11,6 +11,8 @@ import java.util.*
 import kotlin.experimental.or
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.ExperimentalTime
+import kotlin.time.TimeSource
 
 const val OP_STATE = 2L
 const val OP_VOTE = 3L
@@ -27,6 +29,7 @@ const val MASK_MID = (0b11L shl 62).inv()
 
 suspend fun active() = currentCoroutineContext().isActive
 
+@OptIn(ExperimentalTime::class)
 suspend fun Node(
     port: Int, address: InetAddress, n: Int,
     commit: suspend (Int, Long) -> (Unit),
@@ -146,6 +149,7 @@ suspend fun Node(
         val proposed = messages()
         val current = slot()
         try {
+            val started = TimeSource.Monotonic.markNow()
             withTimeout(5.seconds) {
                 log("Proposals: ${savedProposals.size} Votes: ${savedVotes.size} States: ${savedStates.size}")
                 log("Proposed: $proposed - $current")
@@ -157,6 +161,7 @@ suspend fun Node(
                 while (index < majority) {
                     var proposal = savedProposals.poll(current)
                     if (proposal == null) {
+                        log("Network")
                         proposes.receive(buffer.clear())
                         proposal = buffer.getLong(0)
                         val depth = buffer.getInt(8)
@@ -166,7 +171,7 @@ suspend fun Node(
                             savedProposals.getOrPut(depth) { LinkedList() }.offerFirst(proposal)
                             continue
                         }
-                    }
+                    } else log("Cached")
                     var count = 1
                     for (i in 0 until index)
                         if (proposals[i] == proposal && ++count >= majority) {
@@ -178,6 +183,7 @@ suspend fun Node(
                 }
                 commit(current, phase(0, STATE_ZERO, -1, current))
             }
+            log("Round Took: ${started.elapsedNow()}")
         } catch (reason: Throwable) {
             if (reason is TimeoutCancellationException) {
                 warn("Timed Out")

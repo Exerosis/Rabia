@@ -120,6 +120,8 @@ fun CoroutineScope.SMR(
                 slot
             }, *nodes)
         } catch (reason: Throwable) { reason.printStackTrace() } }
+        println("No Longer Running")
+        cancel("Please everything die")
     } }
 
     launch { try {
@@ -127,6 +129,7 @@ fun CoroutineScope.SMR(
             delay(1.seconds)
             catchup()
         }
+        println("No Longer Catching Up")
     } catch (reason: Throwable) { reason.printStackTrace() } }
     launch { try {
         val socket = InetSocketAddress(address, port)
@@ -140,6 +143,7 @@ fun CoroutineScope.SMR(
                 }; close()
             } }
         }
+        println("No Longer Accepting Messages")
     } catch (reason: Throwable) { reason.printStackTrace() } }
     launch { try {
         val socket = InetSocketAddress(address, repair)
@@ -157,5 +161,6 @@ fun CoroutineScope.SMR(
                 }
             } }
         }
+        println("No Longer Avaliable For Repair")
     } catch (reason: Throwable) { reason.printStackTrace()} }
 }

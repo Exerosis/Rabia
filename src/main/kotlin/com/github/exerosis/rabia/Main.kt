@@ -20,14 +20,15 @@ const val DEBUG = true
 const val WARN = true
 const val SERVER = false
 
-fun run() = runBlocking(dispatcher) {
-    println("Hostname: $hostname")
-    println("Current: ${current()}")
-    println("Other: ${other()}")
-    val address = NetworkInterface.networkInterfaces().asSequence().flatMap {
-        it.inetAddresses.asSequence()
-    }.find { println(it); "192.168.1" in it.toString() }!!
-    println(address)
+fun run() {
+    runBlocking(dispatcher) {
+        println("Hostname: $hostname")
+        println("Current: ${current()}")
+        println("Other: ${other()}")
+        val address = NetworkInterface.networkInterfaces().asSequence().flatMap {
+            it.inetAddresses.asSequence()
+        }.find { println(it); "192.168.1" in it.toString() }!!
+        println(address)
 //    val repairs = arrayOf(
 //        InetSocketAddress(other(), 2000),
 //        InetSocketAddress(other(), 2001)
@@ -38,36 +39,36 @@ fun run() = runBlocking(dispatcher) {
 //        InetSocketAddress(other(), 3000),
 //        InetSocketAddress(other(), 3004)
 //    )
-    val repairs = arrayOf(
-        InetSocketAddress("192.168.1.1", 2000),
-        InetSocketAddress("192.168.1.2", 2000),
-        InetSocketAddress("192.168.1.3", 2000),
+        val repairs = arrayOf(
+            InetSocketAddress("192.168.1.1", 2000),
+            InetSocketAddress("192.168.1.2", 2000),
+            InetSocketAddress("192.168.1.3", 2000),
 //        InetSocketAddress("192.168.1.4", 2000),
-    )
-    val nodes = arrayOf(
-        InetSocketAddress("192.168.1.1", 3000),
-        InetSocketAddress("192.168.1.2", 3000),
-        InetSocketAddress("192.168.1.3", 3000),
+        )
+        val nodes = arrayOf(
+            InetSocketAddress("192.168.1.1", 3000),
+            InetSocketAddress("192.168.1.2", 3000),
+            InetSocketAddress("192.168.1.3", 3000),
 //        InetSocketAddress("192.168.1.4", 3000),
-    )
+        )
 
-    val network = NetworkInterface.getByInetAddress(address)
-    println("Interface: ${network.displayName}")
+        val network = NetworkInterface.getByInetAddress(address)
+        println("Interface: ${network.displayName}")
 
-    for (i in 0 until 1) {
-        //create a node that takes messages on 1000
-        //and runs weak mvc instances on 2000-2002
-        val processed = AtomicInteger(0)
-        var index = 0
-        SMR(4,
-            repair=2000 + i, repairs,
-            pipes=arrayOf(3000 + (i * 4)), nodes,
-            port=1000 + i, address
-        ) {
-            processed.incrementAndGet()
+        for (i in 0 until 1) {
+            //create a node that takes messages on 1000
+            //and runs weak mvc instances on 2000-2002
+            val processed = AtomicInteger(0)
+            var index = 0
+            SMR(4,
+                repair=2000 + i, repairs,
+                pipes=arrayOf(3000 + (i * 4)), nodes,
+                port=1000 + i, address
+            ) {
+                processed.incrementAndGet()
 //            if ("$index" != it) error("IDk why this is happening :D")
 //            println("${index++}: $it")
-        }
+            }
 
 //        launch {
 //            while (isActive) {
@@ -76,7 +77,9 @@ fun run() = runBlocking(dispatcher) {
 //                delay(15.seconds)
 //            }
 //        }
+        }
     }
+    println("Exited Run")
 }
 fun test() = runBlocking(dispatcher) {
     val address = getByName("10.0.2.15")
