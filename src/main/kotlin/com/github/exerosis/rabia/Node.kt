@@ -188,10 +188,10 @@ suspend fun Node(
                     var count = 1
                     for (i in 0 until index)
                         if (proposals[i] == proposal && ++count >= majority) {
-                            log("Countered ($count/$majority): $proposal - $current @$from")//candidate
+                            log("C: $proposal - $current")//candidate
                             return@withTimeout commit(current, phase(0, STATE_ONE, proposals[i], current))
                         }
-                    log("Countered ($count/$majority): $proposal - $current @$from")//candidate
+                    log("C: $proposal - $current")//candidate
                     proposals[index++] = proposal
                 }
                 commit(current, phase(0, STATE_ZERO, -1, current))
