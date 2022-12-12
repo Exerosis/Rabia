@@ -102,7 +102,7 @@ suspend fun TCP(
         }
         override suspend fun receive(buffer: ByteBuffer): SocketAddress {
             while (true) {
-                inbound.forEach {
+                inbound.shuffled().forEach {
                     if (it.read(buffer) != 0) {
                         while (buffer.hasRemaining()) {
                             it.read(buffer)
