@@ -92,7 +92,7 @@ suspend fun Node(
                     continue
                 }
             }
-            log("Got State (${zero + one + 1}/$majority): $op - $slot @$from")//candidate
+//            log("Got State (${zero + one + 1}/$majority): $op - $slot @$from")//candidate
 //            log("Got State (${zero + one + 1}/$majority): $op - $slot @$from")//candidate
 //            log("Got State (${zero + one + 1}/$majority): $op - $slot @$from")//candidate
             when (op) {
@@ -125,7 +125,7 @@ suspend fun Node(
                     continue
                 }
             }
-            log("Got Vote (${zero + one + lost + 1}/$majority): $op - $slot @$from")//candidate
+//            log("Got Vote (${zero + one + lost + 1}/$majority): $op - $slot @$from")//candidate
 //            log("Got Vote (${zero + one + lost + 1}/$majority): $op - $slot @$from")//candidate
 //            log("Got Vote (${zero + one + lost + 1}/$majority): $op - $slot @$from")//candidate
             when (op) {
