@@ -1,9 +1,6 @@
 package com.github.exerosis.rabia
 
-import kotlinx.coroutines.TimeoutCancellationException
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.*
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.SocketAddress
@@ -11,6 +8,7 @@ import java.nio.ByteBuffer.allocateDirect
 import java.util.*
 import kotlin.experimental.or
 import kotlin.random.Random
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
 import kotlin.time.TimeSource
@@ -167,7 +165,7 @@ suspend fun Node(
                 var index = 0
 
                 //Removed all messages on receiving
-
+                delay(0.10.milliseconds)
                 //create this lazily
                 random = Random(current)
                 while (index < majority) {
