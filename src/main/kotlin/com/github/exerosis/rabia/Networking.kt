@@ -84,7 +84,7 @@ suspend fun TCP(
         override val isOpen = server.isOpen
         override fun close() = runBlocking { scope.cancel(); server.close() }
         override suspend fun send(buffer: ByteBuffer) {
-            withContext(Dispatchers.IO) {
+//            withContext(Dispatchers.IO) {
                 outbound.map {
                     val copy = buffer.duplicate()
                     scope.async {
@@ -98,7 +98,7 @@ suspend fun TCP(
                         }
                     }
                 }.awaitAll()
-            }
+//            }
         }
         override suspend fun receive(buffer: ByteBuffer): SocketAddress {
             while (true) {
