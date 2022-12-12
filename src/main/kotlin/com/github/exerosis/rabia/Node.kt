@@ -184,10 +184,12 @@ suspend fun Node(
                             continue
                         }
                         if (current < depth) {
+                            println("NEW: $depth vs $current")
 //                            warn("Added Saved")
                             savedProposals.getOrPut(depth) { LinkedList() }.offerFirst(proposal)
                             continue
                         }
+                        println("CORRECT: $depth")
                     }
                     var count = 1
                     for (i in 0 until index)
