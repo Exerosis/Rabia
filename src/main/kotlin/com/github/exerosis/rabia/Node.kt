@@ -176,20 +176,20 @@ suspend fun Node(
                     var proposal = savedProposals.poll(current)
                     if (proposal == null) {
                         from = proposes.receive(buffer.clear())
-                        println("N: $from") //candidate
+                        log("N: $from") //candidate
                         proposal = buffer.getLong(0)
                         val depth = buffer.getInt(8)
                         if (depth < current) {
-                            println("OLD: $depth vs $current")
+                            log("OLD: $depth vs $current")
                             continue
                         }
                         if (current < depth) {
-                            println("NEW: $depth vs $current")
+                            log("NEW: $depth vs $current")
 //                            warn("Added Saved")
                             savedProposals.getOrPut(depth) { LinkedList() }.offerFirst(proposal)
                             continue
                         }
-                        println("CORRECT: $depth")
+                        log("CORRECT: $depth")
                     }
                     var count = 1
                     for (i in 0 until index)

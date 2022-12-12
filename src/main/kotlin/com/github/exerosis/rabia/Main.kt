@@ -9,7 +9,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import kotlin.streams.asSequence
 import kotlin.time.ExperimentalTime
 
-const val DEBUG = true
+const val DEBUG = false
 const val WARN = false
 const val SERVER = false
 
