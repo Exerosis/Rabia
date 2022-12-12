@@ -8,7 +8,6 @@ import java.nio.ByteBuffer.allocateDirect
 import java.util.*
 import kotlin.experimental.or
 import kotlin.random.Random
-import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
 import kotlin.time.TimeSource
@@ -165,7 +164,7 @@ suspend fun Node(
                 var index = 0
 
                 //Removed all messages on receiving
-                delay(0.10.milliseconds)
+                Thread.sleep(0L, 100_000)
                 //create this lazily
                 random = Random(current)
                 while (index < majority) {
