@@ -84,19 +84,21 @@ suspend fun TCP(
         override val isOpen = server.isOpen
         override fun close() = runBlocking { scope.cancel(); server.close() }
         override suspend fun send(buffer: ByteBuffer) {
-            outbound.map {
-                val copy = buffer.duplicate()
-                scope.async {
-                    try {
-                        while (copy.hasRemaining()) {
-                            it.write(copy)
-                            Thread.onSpinWait()
+            withContext(Dispatchers.IO) {
+                outbound.map {
+                    val copy = buffer.duplicate()
+                    scope.async {
+                        try {
+                            while (copy.hasRemaining()) {
+                                it.write(copy)
+                                Thread.onSpinWait()
+                            }
+                        } catch (reason: Throwable) {
+                            reason.printStackTrace()
                         }
-                    } catch (reason: Throwable) {
-                        reason.printStackTrace()
                     }
-                }
-            }.awaitAll()
+                }.awaitAll()
+            }
         }
         override suspend fun receive(buffer: ByteBuffer): SocketAddress {
             while (true) {
