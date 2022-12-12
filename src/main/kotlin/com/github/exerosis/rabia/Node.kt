@@ -60,13 +60,13 @@ suspend fun Node(
     fun HashMap<Int, LinkedList<Long>>.poll(depth: Int): Long? {
         val list = this[depth]
         val it = list?.pollLast()
-        if (list?.isEmpty() == true) this.remove(depth)
+        if (list?.isEmpty() == true) remove(depth)
         return it
     }
     fun HashMap<Int, LinkedList<Byte>>.poll(depth: Int): Byte? {
         val list = this[depth]
         val it = list?.pollLast()
-        if (list?.isEmpty() == true) this.remove(depth)
+        if (list?.isEmpty() == true) remove(depth)
         return it
     }
     val loopback = InetSocketAddress(InetAddress.getLoopbackAddress(), 0)
