@@ -184,7 +184,7 @@ suspend fun Node(
                             savedProposals.getOrPut(depth) { LinkedList() }.offerFirst(proposal)
                             continue
                         }
-                    } else log("C") //candidate
+                    }
                     var count = 1
                     for (i in 0 until index)
                         if (proposals[i] == proposal && ++count >= majority) {
