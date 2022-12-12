@@ -174,7 +174,7 @@ suspend fun Node(
                     var from: SocketAddress = loopback
                     var proposal = savedProposals.poll(current)
                     if (proposal == null) {
-                        log("N") //candidate
+                        println("N") //candidate
                         from = proposes.receive(buffer.clear())
                         proposal = buffer.getLong(0)
                         val depth = buffer.getInt(8)
