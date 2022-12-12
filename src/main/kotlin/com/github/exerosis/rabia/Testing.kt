@@ -14,14 +14,14 @@ suspend fun log(message: String) {
     val ctx = currentCoroutineContext()[CoroutineName]
     if (DEBUG) {
         println("[${ctx?.name}] $message")
-        System.out.flush()
+//        System.out.flush()
     }
 }
 suspend fun warn(message: String) {
     val ctx = currentCoroutineContext()[CoroutineName]
     if (WARN) {
         println("[${ctx?.name}] $message")
-        System.out.flush()
+//        System.out.flush()
     }
 }
 
