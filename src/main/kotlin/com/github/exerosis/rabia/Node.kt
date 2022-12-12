@@ -160,7 +160,7 @@ suspend fun Node(
         try {
             val started = TimeSource.Monotonic.markNow()
             withTimeout(5.seconds) {
-                println("[${Thread.currentThread().name}]Proposals: $proposed - $current | ${savedProposals.size} Votes: ${savedVotes.size} States: ${savedStates.size}")
+                log("[${Thread.currentThread().name}]Proposals: $proposed - $current | ${savedProposals.size} Votes: ${savedVotes.size} States: ${savedStates.size}")
 //                log("Proposed: ")
                 buffer.clear().putLong(proposed).putInt(current)
                 proposes.send(buffer.flip())
@@ -194,10 +194,10 @@ suspend fun Node(
                     var count = 1
                     for (i in 0 until index)
                         if (proposals[i] == proposal && ++count >= majority) {
-                            println("C: $proposal - $current $from")//candidate
+                            log("C: $proposal - $current $from")//candidate
                             return@withTimeout commit(current, phase(0, STATE_ONE, proposals[i], current))
                         }
-                    println("C: $proposal - $current $from")//candidate
+                    log("C: $proposal - $current $from")//candidate
                     proposals[index++] = proposal
                 }
                 commit(current, phase(0, STATE_ZERO, -1, current))
