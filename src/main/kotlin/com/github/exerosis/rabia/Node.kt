@@ -79,6 +79,7 @@ suspend fun Node(
         var zero = 0; var one = 0; var lost = 0
         while (zero + one < majority) {
             var op = savedStates.poll(slot)
+            //TODO don't show port in message
             var from: SocketAddress = loopback
             if (op == null) {
                 from = states.receive(buffer.clear().limit(5))
@@ -122,7 +123,7 @@ suspend fun Node(
                     continue
                 }
             }
-            log("Got State (${zero + one + majority + 1}/$majority): $op - $slot @$from")
+            log("Got Vote (${zero + one + lost + 1}/$majority): $op - $slot @$from")
             when (op) {
                 VOTE_ONE or p -> ++one
                 VOTE_ZERO or p -> ++zero
@@ -183,7 +184,7 @@ suspend fun Node(
                             log("Countered ($count/$majority): $proposal - $current @$from")
                             return@withTimeout commit(current, phase(0, STATE_ONE, proposals[i], current))
                         }
-                    log("Countered ($count/$majority): $proposal - $current")
+                    log("Countered ($count/$majority): $proposal - $current @$from")
                     proposals[index++] = proposal
                 }
                 commit(current, phase(0, STATE_ZERO, -1, current))

@@ -56,7 +56,8 @@ suspend fun TCP(
     server.configureBlocking(false)
     server.bind(InetSocketAddress(address, port))
     val scope = CoroutineScope(dispatcher)
-    val connections = ConcurrentLinkedQueue<SocketChannel>()
+    val outbound = ConcurrentLinkedQueue<SocketChannel>()
+    val inbound = ConcurrentLinkedQueue<SocketChannel>()
     scope.launch {
         while (server.isOpen && isActive)
             server.accept()?.apply {
@@ -65,12 +66,12 @@ suspend fun TCP(
                 setOption(SO_RCVBUF, size)
                 setOption(TCP_NODELAY, true)
 //                setOption(TCP_QUICKACK, true)
-                connections.add(this)
+                inbound.add(this)
             }
     }
     addresses.map {
         scope.async { while (true) try {
-            return@async connections.add(SocketChannel.open(it).apply {
+            return@async outbound.add(SocketChannel.open(it).apply {
                 configureBlocking(false)
                 setOption(SO_SNDBUF, size)
                 setOption(SO_RCVBUF, size)
@@ -79,11 +80,13 @@ suspend fun TCP(
             })
         } catch (_: Throwable) {}}
     }.forEach { it.await() }
+    println("Inbound: ${inbound.size}")
+    println("Outbound: ${outbound.size}")
     return object : Multicaster {
         override val isOpen = server.isOpen
         override fun close() = runBlocking { scope.cancel(); server.close() }
         override suspend fun send(buffer: ByteBuffer) {
-            connections.map {
+            outbound.map {
                 val copy = buffer.duplicate()
                 scope.async {
                     try {
@@ -99,7 +102,7 @@ suspend fun TCP(
         }
         override suspend fun receive(buffer: ByteBuffer): SocketAddress {
             while (true) {
-                connections.forEach {
+                inbound.forEach {
                     if (it.read(buffer) != 0) {
                         while (buffer.hasRemaining()) {
                             it.read(buffer)

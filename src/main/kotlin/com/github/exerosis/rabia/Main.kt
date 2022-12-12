@@ -60,7 +60,7 @@ fun run() {
             //and runs weak mvc instances on 2000-2002
             val processed = AtomicInteger(0)
             var index = 0
-            SMR(4,
+            SMR(3,
                 repair=2000 + i, repairs,
                 pipes=arrayOf(3000 + (i * 4)), nodes,
                 port=1000 + i, address
