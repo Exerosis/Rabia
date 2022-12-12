@@ -92,7 +92,7 @@ suspend fun Node(
                     continue
                 }
             }
-            log("Got State (${zero + one + 1}/$majority): $op - $slot @$from")
+//            log("Got State (${zero + one + 1}/$majority): $op - $slot @$from")
             when (op) {
                 STATE_ONE or p -> ++one
                 STATE_ZERO or p -> ++zero
@@ -123,7 +123,7 @@ suspend fun Node(
                     continue
                 }
             }
-            log("Got Vote (${zero + one + lost + 1}/$majority): $op - $slot @$from")
+//            log("Got Vote (${zero + one + lost + 1}/$majority): $op - $slot @$from")
             when (op) {
                 VOTE_ONE or p -> ++one
                 VOTE_ZERO or p -> ++zero
@@ -167,7 +167,7 @@ suspend fun Node(
                     var from: SocketAddress = loopback
                     var proposal = savedProposals.poll(current)
                     if (proposal == null) {
-                        log("Network")
+//                        log("Network")
                         from = proposes.receive(buffer.clear())
                         proposal = buffer.getLong(0)
                         val depth = buffer.getInt(8)
@@ -177,14 +177,14 @@ suspend fun Node(
                             savedProposals.getOrPut(depth) { LinkedList() }.offerFirst(proposal)
                             continue
                         }
-                    } else log("Cached")
+                    }
                     var count = 1
                     for (i in 0 until index)
                         if (proposals[i] == proposal && ++count >= majority) {
-                            log("Countered ($count/$majority): $proposal - $current @$from")
+//                            log("Countered ($count/$majority): $proposal - $current @$from")
                             return@withTimeout commit(current, phase(0, STATE_ONE, proposals[i], current))
                         }
-                    log("Countered ($count/$majority): $proposal - $current @$from")
+//                    log("Countered ($count/$majority): $proposal - $current @$from")
                     proposals[index++] = proposal
                 }
                 commit(current, phase(0, STATE_ZERO, -1, current))

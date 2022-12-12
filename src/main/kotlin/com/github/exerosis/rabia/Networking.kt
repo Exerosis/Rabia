@@ -80,8 +80,6 @@ suspend fun TCP(
             })
         } catch (_: Throwable) {}}
     }.forEach { it.await() }
-    println("Inbound: ${inbound.size}")
-    println("Outbound: ${outbound.size}")
     return object : Multicaster {
         override val isOpen = server.isOpen
         override fun close() = runBlocking { scope.cancel(); server.close() }
