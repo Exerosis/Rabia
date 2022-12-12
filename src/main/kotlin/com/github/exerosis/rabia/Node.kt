@@ -126,7 +126,7 @@ suspend fun Node(
                 }
             }
 //            log("Got Vote (${zero + one + lost + 1}/$majority): $op - $slot @$from")//candidate
-//            log("Got Vote (${zero + one + lost + 1}/$majority): $op - $slot @$from")//candidate
+            log("Got Vote (${zero + one + lost + 1}/$majority): $op - $slot @$from")//candidate
 //            log("Got Vote (${zero + one + lost + 1}/$majority): $op - $slot @$from")//candidate
             when (op) {
                 VOTE_ONE or p -> ++one
