@@ -167,8 +167,8 @@ suspend fun Node(
                 var index = 0
 
                 //Removed all messages on receiving
-                val test = System.nanoTime() + 100_000
-                while (System.nanoTime() < test) {}
+//                val test = System.nanoTime() + 100_000
+//                while (System.nanoTime() < test) {}
                 //create this lazily
                 random = Random(current)
                 while (index < majority) {
