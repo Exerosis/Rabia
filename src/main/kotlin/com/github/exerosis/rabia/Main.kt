@@ -43,9 +43,9 @@ fun run() {
             InetSocketAddress("192.168.1.2", 3000),
             InetSocketAddress("192.168.1.3", 3000),
 //
-            InetSocketAddress("192.168.1.1", 4000),
-            InetSocketAddress("192.168.1.2", 4000),
-            InetSocketAddress("192.168.1.3", 4000),
+//            InetSocketAddress("192.168.1.1", 4000),
+//            InetSocketAddress("192.168.1.2", 4000),
+//            InetSocketAddress("192.168.1.3", 4000),
         )
 
         val network = NetworkInterface.getByInetAddress(address)
@@ -54,7 +54,7 @@ fun run() {
         var index = 0
         SMR(3,
             repair=2000, repairs,
-            pipes=arrayOf(3000, 4000), nodes,
+            pipes=arrayOf(3000), nodes,
             port=1000, address
         ) {
             processed.incrementAndGet()
