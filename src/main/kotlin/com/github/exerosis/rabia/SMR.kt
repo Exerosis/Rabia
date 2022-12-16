@@ -40,10 +40,10 @@ class Profiler(period: Int, val name: String) {
 val COMPARATOR = compareBy<Long> { it and 0xFFFFFFFF }.thenBy { it shr 32 }
 @OptIn(ExperimentalTime::class)
 fun CoroutineScope.SMR(
-    n: Int,
-    repair: Int, repairs: Array<InetSocketAddress>,
-    pipes: Array<Int>, nodes: Array<InetSocketAddress>,
-    port: Int, address: InetAddress,
+    n: Int, address: InetAddress,
+    nodes: Array<InetAddress>,
+    queue: Int, repair: Int,
+    vararg pipes: Int,
     commit: (String) -> (Unit)
 ) {
     val log = AtomicLongArray(20) //Filled with NONE
@@ -57,6 +57,7 @@ fun CoroutineScope.SMR(
 
     suspend fun repair(start: Int, end: Int) {
         warn("Repair: $start - $end")
+        val repairs = nodes.map { InetSocketAddress(it, repair) }.toMutableList()
         repairs.shuffle()
         repairs.firstOrNull {
             try {
@@ -146,7 +147,7 @@ fun CoroutineScope.SMR(
         println("No Longer Catching Up")
     } catch (reason: Throwable) { reason.printStackTrace() } }
     launch { try {
-        val socket = InetSocketAddress(address, port)
+        val socket = InetSocketAddress(address, queue)
         while (provider.isOpen && isActive) {
             provider.accept(socket).apply { launch {
                 while (isActive && isOpen) {

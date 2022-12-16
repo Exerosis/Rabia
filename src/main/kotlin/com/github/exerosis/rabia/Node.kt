@@ -35,17 +35,19 @@ suspend fun Node(
     commit: suspend (Int, Long) -> (Unit),
     messages: suspend () -> (Long),
     slot: suspend () -> (Int),
-    vararg nodes: InetSocketAddress
+    vararg nodes: InetAddress
 ) = withContext(test) {
     val f = n / 2
     val majority = (n / 2) + 1
     info("N: $n F: $f Majority: $majority")
-    val proposes = TCP(address, port, 65527, *nodes)
+    val proposes = TCP(address, port, 65527, *nodes.map {
+        InetSocketAddress(it, port)
+    }.toTypedArray())
     val states = TCP(address, port + 1, 65527, *nodes.map {
-        InetSocketAddress(it.address, it.port + 1)
+        InetSocketAddress(it, port + 1)
     }.toTypedArray())
     val votes = TCP(address, port + 2, 65527, *nodes.map {
-        InetSocketAddress(it.address, it.port + 2)
+        InetSocketAddress(it, port + 2)
     }.toTypedArray())
     val buffer = allocateDirect(12)
 

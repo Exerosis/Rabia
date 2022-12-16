@@ -3,6 +3,7 @@
 package com.github.exerosis.rabia
 
 import kotlinx.coroutines.runBlocking
+import java.net.InetAddress.getByName
 import java.net.InetSocketAddress
 import java.net.NetworkInterface
 import java.util.concurrent.atomic.AtomicInteger
@@ -40,23 +41,18 @@ fun run() {
 //        InetSocketAddress("192.168.1.4", 2000),
         )
         val nodes = arrayOf(
-            InetSocketAddress("192.168.1.1", 3000),
-            InetSocketAddress("192.168.1.2", 3000),
-            InetSocketAddress("192.168.1.3", 3000),
-//
-            InetSocketAddress("192.168.1.1", 4000),
-            InetSocketAddress("192.168.1.2", 4000),
-            InetSocketAddress("192.168.1.3", 4000),
+            getByName("192.168.1.1"),
+            getByName("192.168.1.2"),
+            getByName("192.168.1.3"),
         )
 
         val network = NetworkInterface.getByInetAddress(address)
         println("Interface: ${network.displayName}")
         val processed = AtomicInteger(0)
         var index = 0
-        SMR(3,
-            repair=2000, repairs,
-            pipes=arrayOf(3000, 4000), nodes,
-            port=1000, address
+        SMR(3, address, nodes,
+            queue=1000, repair=2000,
+            pipes=intArrayOf(3000, 4000)
         ) {
             processed.incrementAndGet()
 //            if ("$index" != it) error("IDk why this is happening :D")
