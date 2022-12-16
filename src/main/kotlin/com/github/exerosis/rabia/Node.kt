@@ -35,7 +35,7 @@ suspend fun Node(
     messages: suspend () -> (Long),
     slot: suspend () -> (Int),
     vararg nodes: InetAddress
-) = withContext(test) {
+) {
     val f = n / 2
     val majority = (n / 2) + 1
     info("N: $n F: $f Majority: $majority")

@@ -22,7 +22,7 @@ fun run() {
         }.find { "192.168.1" in it.toString() }!!
         val network = NetworkInterface.getByInetAddress(address)
         println("Hostname: $hostname")
-        println("Address: ${address.hostName}")
+        println("Address: ${address.hostAddress}")
         println("Interface: ${network.displayName}")
 
         val nodes = arrayOf(
