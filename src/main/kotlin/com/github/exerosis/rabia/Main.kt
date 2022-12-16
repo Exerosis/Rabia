@@ -9,10 +9,10 @@ import java.net.NetworkInterface
 import kotlin.streams.asSequence
 import kotlin.time.ExperimentalTime
 
-const val INFO = true
+const val INFO = false
 const val DEBUG = false
 const val WARN = true
-const val COUNT = 50
+const val COUNT = 50_000
 
 fun run() {
     runBlocking(dispatcher) {
