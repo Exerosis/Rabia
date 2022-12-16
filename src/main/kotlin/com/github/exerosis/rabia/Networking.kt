@@ -101,6 +101,7 @@ suspend fun TCP(
 //            }
         }
         override suspend fun receive(buffer: ByteBuffer): SocketAddress {
+            //TODO Switch to round robin
             while (true) {
                 inbound.shuffled().forEach {
                     if (it.read(buffer) != 0) {

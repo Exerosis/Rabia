@@ -85,7 +85,7 @@ fun main() = runBlocking(dispatcher) {
     }
     println("Starting!")
     var i = 0
-    while (i < 50_000) {
+    while (i < 500_000) {
         println("$i")
         submit("${i++}")
     }
