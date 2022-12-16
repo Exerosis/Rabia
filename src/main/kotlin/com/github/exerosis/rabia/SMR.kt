@@ -97,9 +97,9 @@ fun CoroutineScope.SMR(
             break
         }
     }
+    val mark = AtomicReference(markNow())
+    val count = AtomicInteger(0)
     instances.forEachIndexed { i, it -> it.apply {
-        val mark = AtomicReference(markNow())
-        val count = AtomicInteger(0)
         launch(CoroutineName("Pipe-$i")) { try {
             var last = -1L; var slot = i
             Node(pipes[i], address, n, { depth, id ->
@@ -125,7 +125,7 @@ fun CoroutineScope.SMR(
                     //Will this be enough to keep the logs properly cleared?
                     messages.remove(log[slot % log.length()])
                     log[slot % log.length()] = 0L
-                    if (count.incrementAndGet() == 1000) {
+                    if (count.incrementAndGet() >= 1000) {
                         val amount = count.getAndSet(0)
                         println("$amount in ${mark.getAndSet(markNow()).elapsedNow()}")
                     }
