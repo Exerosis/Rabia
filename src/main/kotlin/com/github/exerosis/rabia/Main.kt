@@ -11,7 +11,7 @@ import kotlin.time.ExperimentalTime
 
 const val INFO = true
 const val DEBUG = false
-const val WARN = false
+const val WARN = true
 const val SERVER = false
 
 fun run() {
