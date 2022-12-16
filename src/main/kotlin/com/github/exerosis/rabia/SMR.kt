@@ -139,7 +139,10 @@ fun CoroutineScope.SMR(
                 using.add(slot)
                 slot
             }, *nodes)
-        } catch (reason: Throwable) { reason.printStackTrace() }
+        } catch (reason: Throwable) {
+            reason.printStackTrace()
+            println("here")
+        }
             info("No Longer Running")
             cancel("Please everything die")
         }

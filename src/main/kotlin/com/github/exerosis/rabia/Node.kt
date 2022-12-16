@@ -218,5 +218,4 @@ suspend fun Node(
             commit(current, 0)
         }
     }
-    debug("Died :(")
 }
