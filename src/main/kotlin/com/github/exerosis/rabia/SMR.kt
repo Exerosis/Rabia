@@ -98,9 +98,8 @@ fun CoroutineScope.SMR(
     instances.forEachIndexed { i, it -> it.apply {
         launch(CoroutineName("Pipe-$i")) { try {
             var last = -1L; var slot = i
-            println("Starting: Pipe-$i")
             Node(pipes[i], address, n, { depth, id ->
-                println("Log: $log")
+                info("Log: $log")
                 if (depth != slot) warn("DEPTH OFF: $depth != $slot")
 //                println("$depth - $id != $last")
 //                println("Depth: $depth Id: $id - ${messages[id]}")
@@ -125,7 +124,7 @@ fun CoroutineScope.SMR(
                     log[slot % log.length()] = 0L
                 }
             }, {
-                log("Size: $size")
+                debug("Size: $size")
 //                println("Size: $size")
                 while ((slot - committed.get()) >= log.length()) {}
                 take().also<Long> { last = it }
@@ -134,7 +133,7 @@ fun CoroutineScope.SMR(
                 slot
             }, *nodes)
         } catch (reason: Throwable) { reason.printStackTrace() }
-            println("No Longer Running")
+            info("No Longer Running")
             cancel("Please everything die")
         }
     } }

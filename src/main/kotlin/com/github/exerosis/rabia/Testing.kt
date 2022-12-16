@@ -10,7 +10,14 @@ import java.util.concurrent.Executors
 val executor: ExecutorService = Executors.newCachedThreadPool()
 val dispatcher = executor.asCoroutineDispatcher()
 
-suspend fun log(message: String) {
+suspend fun info(message: String) {
+    val ctx = currentCoroutineContext()[CoroutineName]
+    if (INFO) {
+        println("[${ctx?.name}] $message")
+//        System.out.flush()
+    }
+}
+suspend fun debug(message: String) {
     val ctx = currentCoroutineContext()[CoroutineName]
     if (DEBUG) {
         println("[${ctx?.name}] $message")

@@ -39,7 +39,7 @@ suspend fun Node(
 ) = withContext(test) {
     val f = n / 2
     val majority = (n / 2) + 1
-    log("N: $n F: $f Majority: $majority")
+    info("N: $n F: $f Majority: $majority")
     val proposes = TCP(address, port, 65527, *nodes)
     val states = TCP(address, port + 1, 65527, *nodes.map {
         InetSocketAddress(it.address, it.port + 1)
@@ -81,7 +81,7 @@ suspend fun Node(
         if (p > 0) warn("Phase: $p")
         buffer.clear().put(state or p).putInt(slot)
         states.send(buffer.flip())
-        log("Sent State: ${state or p} - $slot")
+        debug("Sent State: ${state or p} - $slot")
         var zero = 0; var one = 0; var lost = 0
         while (zero + one < majority) {
             var op = savedStates.poll(slot)
@@ -116,7 +116,7 @@ suspend fun Node(
         } or p
         buffer.clear().put(vote).putInt(slot)
         votes.send(buffer.flip())
-        log("Sent Vote: $vote - $slot")
+        debug("Sent Vote: $vote - $slot")
         zero = 0; one = 0
         //TODO can we reduce the amount we wait for here.
         while (zero + one + lost < majority) {
@@ -144,7 +144,7 @@ suspend fun Node(
             }
         }
 //        profileVote.end()
-        log("End Phase: $p - $slot")
+        debug("End Phase: $p - $slot")
         val next = (p + 1).toByte()
         if (next > 120) error("State to high!")
         return if (zero >= f + 1) -1
@@ -170,7 +170,7 @@ suspend fun Node(
         try {
             profileRound.start()
             withTimeout(5.seconds) {
-                log("[${Thread.currentThread().name}]Proposals: $proposed - $current | ${savedProposals.size} Votes: ${savedVotes.size} States: ${savedStates.size}")
+                debug("[${Thread.currentThread().name}]Proposals: $proposed - $current | ${savedProposals.size} Votes: ${savedVotes.size} States: ${savedStates.size}")
 //                log("Proposed: ")
                 buffer.clear().putLong(proposed).putInt(current)
                 proposes.send(buffer.flip())
@@ -186,28 +186,28 @@ suspend fun Node(
                     var proposal = savedProposals.poll(current)
                     if (proposal == null) {
                         from = proposes.receive(buffer.clear())
-                        log("N: $from") //candidate
+                        debug("N: $from") //candidate
                         proposal = buffer.getLong(0)
                         val depth = buffer.getInt(8)
                         if (depth < current) {
-                            log("OLD: $depth vs $current")
+                            debug("OLD: $depth vs $current")
                             continue
                         }
                         if (current < depth) {
-                            log("NEW: $depth vs $current")
+                            debug("NEW: $depth vs $current")
 //                            warn("Added Saved")
                             savedProposals.getOrPut(depth) { LinkedList() }.offerFirst(proposal)
                             continue
                         }
-                        log("CORRECT: $depth")
+                        debug("CORRECT: $depth")
                     }
                     var count = 1
                     for (i in 0 until index)
                         if (proposals[i] == proposal && ++count >= majority) {
-                            log("C: $proposal - $current $from")//candidate
+                            debug("C: $proposal - $current $from")//candidate
                             return@withTimeout commit(current, phase(0, STATE_ONE, proposals[i], current))
                         }
-                    log("C: $proposal - $current $from")//candidate
+                    debug("C: $proposal - $current $from")//candidate
                     proposals[index++] = proposal
                 }
                 commit(current, phase(0, STATE_ZERO, -1, current))
@@ -221,5 +221,5 @@ suspend fun Node(
             commit(current, 0)
         }
     }
-    log("Died :(")
+    debug("Died :(")
 }
