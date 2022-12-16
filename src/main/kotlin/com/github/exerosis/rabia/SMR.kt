@@ -141,7 +141,7 @@ fun CoroutineScope.SMR(
     launch { try {
         while (isActive) {
             delay(1.seconds)
-            catchup()
+//            catchup()
         }
         println("No Longer Catching Up")
     } catch (reason: Throwable) { reason.printStackTrace() } }
