@@ -11,6 +11,7 @@ import java.util.concurrent.ConcurrentSkipListSet
 import java.util.concurrent.PriorityBlockingQueue
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLongArray
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.math.abs
 import kotlin.text.Charsets.UTF_8
 import kotlin.time.Duration.Companion.ZERO
@@ -38,6 +39,7 @@ class Profiler(period: Int, val name: String) {
 }
 
 val COMPARATOR = compareBy<Long> { it and 0xFFFFFFFF }.thenBy { it shr 32 }
+@OptIn(ExperimentalTime::class)
 fun CoroutineScope.SMR(
     n: Int, address: InetAddress,
     nodes: Array<InetAddress>,
@@ -96,7 +98,9 @@ fun CoroutineScope.SMR(
         }
     }
     instances.forEachIndexed { i, it -> it.apply {
-        launch(CoroutineName("Pipe-$i")) { try {
+        val mark = AtomicReference(markNow())
+        val count = AtomicInteger(0)
+        launch(CoroutineName("Node-$i")) { try {
             var last = -1L; var slot = i
             Node(pipes[i], address, n, { depth, id ->
                 if (depth != slot) warn("DEPTH OFF: $depth != $slot")
@@ -121,6 +125,10 @@ fun CoroutineScope.SMR(
                     //Will this be enough to keep the logs properly cleared?
                     messages.remove(log[slot % log.length()])
                     log[slot % log.length()] = 0L
+                    if (count.incrementAndGet() == 1000) {
+                        val amount = count.getAndSet(0)
+                        println("$amount in ${mark.getAndSet(markNow()).elapsedNow()}")
+                    }
                 }
                 info("Log: $log")
             }, {
