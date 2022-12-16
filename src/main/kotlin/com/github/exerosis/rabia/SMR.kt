@@ -11,7 +11,6 @@ import java.util.concurrent.ConcurrentSkipListSet
 import java.util.concurrent.PriorityBlockingQueue
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLongArray
-import java.util.concurrent.atomic.AtomicReference
 import kotlin.math.abs
 import kotlin.text.Charsets.UTF_8
 import kotlin.time.Duration.Companion.ZERO
@@ -97,8 +96,6 @@ fun CoroutineScope.SMR(
         }
     }
     instances.forEachIndexed { i, it -> it.apply {
-        val mark = AtomicReference(markNow())
-        val count = AtomicInteger(0)
         launch(CoroutineName("Node-${port - 1000}")) { try {
             var last = -1L; var slot = i
             Node(pipes[i], address, n, { depth, id ->
@@ -124,10 +121,6 @@ fun CoroutineScope.SMR(
                     //Will this be enough to keep the logs properly cleared?
                     messages.remove(log[slot % log.length()])
                     log[slot % log.length()] = 0L
-                    if (count.incrementAndGet() == 1000) {
-                        val amount = count.getAndSet(0)
-                        println("$amount in ${mark.getAndSet(markNow()).elapsedNow()} - $size")
-                    }
                 }
             }, {
                 log("Size: $size")
