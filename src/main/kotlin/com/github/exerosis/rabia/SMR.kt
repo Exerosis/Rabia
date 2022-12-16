@@ -99,7 +99,6 @@ fun CoroutineScope.SMR(
         launch(CoroutineName("Pipe-$i")) { try {
             var last = -1L; var slot = i
             Node(pipes[i], address, n, { depth, id ->
-                info("Log: $log")
                 if (depth != slot) warn("DEPTH OFF: $depth != $slot")
 //                println("$depth - $id != $last")
 //                println("Depth: $depth Id: $id - ${messages[id]}")
@@ -123,6 +122,7 @@ fun CoroutineScope.SMR(
                     messages.remove(log[slot % log.length()])
                     log[slot % log.length()] = 0L
                 }
+                info("Log: $log")
             }, {
                 debug("Size: $size")
 //                println("Size: $size")
