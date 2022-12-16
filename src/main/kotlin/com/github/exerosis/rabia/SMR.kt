@@ -132,7 +132,7 @@ fun CoroutineScope.SMR(
                 }
                 info("Log: $log")
             }, {
-                debug("Size: $size")
+                info("Size: $size")
 //                println("Size: $size")
                 while ((slot - committed.get()) >= log.length()) {}
                 take().also<Long> { last = it }
