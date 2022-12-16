@@ -46,7 +46,7 @@ fun CoroutineScope.SMR(
     port: Int, address: InetAddress,
     commit: (String) -> (Unit)
 ) {
-    val log = AtomicLongArray(100) //Filled with NONE
+    val log = AtomicLongArray(20) //Filled with NONE
     val messages = ConcurrentHashMap<Long, String>()
     val committed = AtomicInteger(-1)
     val highest = AtomicInteger(-1)
