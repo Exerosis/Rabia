@@ -14,11 +14,29 @@ import java.util.concurrent.atomic.AtomicLongArray
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.math.abs
 import kotlin.text.Charsets.UTF_8
+import kotlin.time.Duration.Companion.ZERO
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
+import kotlin.time.TimeMark
 import kotlin.time.TimeSource.Monotonic.markNow
 
 typealias Node = PriorityBlockingQueue<Long>
+
+@OptIn(ExperimentalTime::class)
+class Profiler(period: Int, val name: String) {
+    private val times = Array(period) { ZERO }
+    private var mark: TimeMark? = null
+    private var i = 0
+
+    fun start() { mark = markNow() }
+    fun end() {
+        if (i % times.size == 0) println("$name: $this")
+        if (mark != null)
+            times[i++ % times.size] = mark!!.elapsedNow()
+    }
+    fun average() = times.reduce { acc, it -> it + acc } / times.size
+    override fun toString() = "${average()}"
+}
 
 val COMPARATOR = compareBy<Long> { it and 0xFFFFFFFF }.thenBy { it shr 32 }
 @OptIn(ExperimentalTime::class)

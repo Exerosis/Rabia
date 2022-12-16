@@ -57,6 +57,10 @@ suspend fun Node(
     val savedVotes = HashMap<Int, LinkedList<Byte>>()
     val savedStates = HashMap<Int, LinkedList<Byte>>()
 
+    val profileProposals = Profiler(5000, "ProposalsProfiler")
+    val profileState = Profiler(5000, "StateProfiler")
+    val profileVote = Profiler(5000, "VoteProfiler")
+
     fun HashMap<Int, LinkedList<Long>>.poll(depth: Int): Long? {
         val list = this[depth]
         val it = list?.pollLast()
@@ -72,6 +76,8 @@ suspend fun Node(
     val loopback = InetSocketAddress(InetAddress.getLoopbackAddress(), 0)
 
     suspend fun phase(p: Byte, state: Byte, common: Long, slot: Int): Long {
+        profileProposals.end()
+        profileState.start()
         if (p > 0) warn("Phase: $p")
         buffer.clear().put(state or p).putInt(slot)
         states.send(buffer.flip())
@@ -101,6 +107,8 @@ suspend fun Node(
                 else -> error("LOST MESSAGE")
             }
         }
+        profileState.end()
+        profileVote.start()
         val vote = when {
             zero >= majority -> VOTE_ZERO
             one >= majority -> VOTE_ONE
@@ -135,6 +143,7 @@ suspend fun Node(
                 else -> error("LOST MESSAGE")
             }
         }
+        profileVote.end()
         log("End Phase: $p - $slot")
         val next = (p + 1).toByte()
         if (next > 120) error("State to high!")
@@ -157,6 +166,7 @@ suspend fun Node(
     outer@ while (proposes.isOpen) {
         val proposed = messages()
         val current = slot()
+        profileProposals.start()
         try {
             val started = TimeSource.Monotonic.markNow()
             withTimeout(5.seconds) {
