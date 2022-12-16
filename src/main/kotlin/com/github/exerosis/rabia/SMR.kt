@@ -96,9 +96,10 @@ fun CoroutineScope.SMR(
         }
     }
     instances.forEachIndexed { i, it -> it.apply {
-        launch(CoroutineName("Node-${port - 1000}")) { try {
+        launch(CoroutineName("Pipe-$i")) { try {
             var last = -1L; var slot = i
             Node(pipes[i], address, n, { depth, id ->
+                println("Log: $log")
                 if (depth != slot) warn("DEPTH OFF: $depth != $slot")
 //                println("$depth - $id != $last")
 //                println("Depth: $depth Id: $id - ${messages[id]}")
