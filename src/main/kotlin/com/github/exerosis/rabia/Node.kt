@@ -3,7 +3,6 @@ package com.github.exerosis.rabia
 import kotlinx.coroutines.*
 import java.net.InetAddress
 import java.net.InetSocketAddress
-import java.net.SocketAddress
 import java.nio.ByteBuffer.allocateDirect
 import java.util.*
 import java.util.concurrent.Executors
@@ -75,7 +74,7 @@ suspend fun Node(
         if (list?.isEmpty() == true) remove(depth)
         return it
     }
-    val loopback = InetSocketAddress(InetAddress.getLoopbackAddress(), 0)
+    val loopback = InetSocketAddress(InetAddress.getLoopbackAddress(), 0).address
 
     suspend fun phase(p: Byte, state: Byte, common: Long, slot: Int): Long {
 //        profileProposals.end()
@@ -83,14 +82,14 @@ suspend fun Node(
         if (p > 0) warn("Phase: $p")
         buffer.clear().put(state or p).putInt(slot)
         states.send(buffer.flip())
-        debug("Sent State: ${state or p} - $slot")
+        info("Sent State: ${state or p} - $slot")
         var zero = 0; var one = 0; var lost = 0
         while (zero + one < majority) {
             var op = savedStates.poll(slot)
             //TODO don't show port in message
-            var from: SocketAddress = loopback
+            var from: InetAddress = loopback
             if (op == null) {
-                from = states.receive(buffer.clear().limit(5))
+                from = states.receive(buffer.clear().limit(5)).address
                 op = buffer.get(0)
                 val depth = buffer.getInt(1)
                 if (depth < slot) continue
@@ -100,9 +99,7 @@ suspend fun Node(
                     continue
                 }
             }
-//            log("Got State (${zero + one + 1}/$majority): $op - $slot @$from")//candidate
-//            log("Got State (${zero + one + 1}/$majority): $op - $slot @$from")//candidate
-//            log("Got State (${zero + one + 1}/$majority): $op - $slot @$from")//candidate
+            info("Got State (${zero + one + 1}/$majority): $op - $slot @$from")//candidate
             when (op) {
                 STATE_ONE or p -> ++one
                 STATE_ZERO or p -> ++zero
@@ -118,14 +115,14 @@ suspend fun Node(
         } or p
         buffer.clear().put(vote).putInt(slot)
         votes.send(buffer.flip())
-        debug("Sent Vote: $vote - $slot")
+        info("Sent Vote: $vote - $slot")
         zero = 0; one = 0
         //TODO can we reduce the amount we wait for here.
         while (zero + one + lost < majority) {
-            var from: SocketAddress = loopback
+            var from: InetAddress = loopback
             var op = savedVotes.poll(slot)
             if (op == null) {
-                from = votes.receive(buffer.clear().limit(5))
+                from = votes.receive(buffer.clear().limit(5)).address
                 op = buffer.get(0)
                 val depth = buffer.getInt(1)
                 if (depth < slot) continue
@@ -135,9 +132,7 @@ suspend fun Node(
                     continue
                 }
             }
-//            log("Got Vote (${zero + one + lost + 1}/$majority): $op - $slot @$from")//candidate
-//            log("Got Vote (${zero + one + lost + 1}/$majority): $op - $slot @$from")//candidate
-//            log("Got Vote (${zero + one + lost + 1}/$majority): $op - $slot @$from")//candidate
+            info("Got Vote (${zero + one + lost + 1}/$majority): $op - $slot @$from")//candidate
             when (op) {
                 VOTE_ONE or p -> ++one
                 VOTE_ZERO or p -> ++zero
@@ -172,8 +167,8 @@ suspend fun Node(
         try {
             profileRound.start()
             withTimeout(5.seconds) {
-                debug("[${Thread.currentThread().name}]Proposals: $proposed - $current | ${savedProposals.size} Votes: ${savedVotes.size} States: ${savedStates.size}")
-//                log("Proposed: ")
+                debug("Proposals: ${savedProposals.size} Votes: ${savedVotes.size} States: ${savedStates.size}")
+                info("Sent Proposal: $proposed - $current")
                 buffer.clear().putLong(proposed).putInt(current)
                 proposes.send(buffer.flip())
                 var index = 0
@@ -184,10 +179,10 @@ suspend fun Node(
                 //create this lazily
                 random = Random(current)
                 while (index < majority) {
-                    var from: SocketAddress = loopback
+                    var from: InetAddress = loopback
                     var proposal = savedProposals.poll(current)
                     if (proposal == null) {
-                        from = proposes.receive(buffer.clear())
+                        from = proposes.receive(buffer.clear()).address
                         debug("N: $from") //candidate
                         proposal = buffer.getLong(0)
                         val depth = buffer.getInt(8)
@@ -206,10 +201,10 @@ suspend fun Node(
                     var count = 1
                     for (i in 0 until index)
                         if (proposals[i] == proposal && ++count >= majority) {
-                            debug("C: $proposal - $current $from")//candidate
+                            info("Got Proposal: $proposal - $current @$from")//candidate
                             return@withTimeout commit(current, phase(0, STATE_ONE, proposals[i], current))
                         }
-                    debug("C: $proposal - $current $from")//candidate
+                    info("Got Proposal: $proposal - $current @$from")//candidate
                     proposals[index++] = proposal
                 }
                 commit(current, phase(0, STATE_ZERO, -1, current))

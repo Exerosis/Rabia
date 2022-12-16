@@ -38,7 +38,6 @@ class Profiler(period: Int, val name: String) {
 }
 
 val COMPARATOR = compareBy<Long> { it and 0xFFFFFFFF }.thenBy { it shr 32 }
-@OptIn(ExperimentalTime::class)
 fun CoroutineScope.SMR(
     n: Int, address: InetAddress,
     nodes: Array<InetAddress>,
@@ -46,7 +45,7 @@ fun CoroutineScope.SMR(
     vararg pipes: Int,
     commit: (String) -> (Unit)
 ) {
-    val log = AtomicLongArray(20) //Filled with NONE
+    val log = AtomicLongArray(5) //Filled with NONE
     val messages = ConcurrentHashMap<Long, String>()
     val committed = AtomicInteger(-1)
     val highest = AtomicInteger(-1)

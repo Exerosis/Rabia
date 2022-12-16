@@ -4,7 +4,6 @@ import kotlinx.coroutines.*
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.NetworkInterface.getByInetAddress
-import java.net.SocketAddress
 import java.net.StandardProtocolFamily.INET
 import java.net.StandardSocketOptions.*
 import java.nio.ByteBuffer
@@ -17,7 +16,7 @@ const val BROADCAST = "230.0.0.0" //230
 
 interface Multicaster : AutoCloseable {
     suspend fun send(buffer: ByteBuffer)
-    suspend fun receive(buffer: ByteBuffer): SocketAddress
+    suspend fun receive(buffer: ByteBuffer): InetSocketAddress
     val isOpen: Boolean
 }
 
@@ -100,7 +99,7 @@ suspend fun TCP(
                 }.awaitAll()
 //            }
         }
-        override suspend fun receive(buffer: ByteBuffer): SocketAddress {
+        override suspend fun receive(buffer: ByteBuffer): InetSocketAddress {
             //TODO Switch to round robin
             while (true) {
                 inbound.shuffled().forEach {
@@ -109,7 +108,7 @@ suspend fun TCP(
                             it.read(buffer)
                             Thread.onSpinWait()
                         }
-                        return it.remoteAddress
+                        return it.remoteAddress as InetSocketAddress
                     }
                 }
                 Thread.onSpinWait()
