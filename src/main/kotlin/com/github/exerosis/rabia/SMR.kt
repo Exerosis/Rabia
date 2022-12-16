@@ -104,8 +104,8 @@ fun CoroutineScope.SMR(
                     using.remove(slot)
                     slot = depth + pipes.size
                     //Will this be enough to keep the logs properly cleared?
-                    messages.remove(log[slot])
-                    log[slot] = 0L
+                    messages.remove(log[slot % log.length()])
+                    log[slot % log.length()] = 0L
                     if (count.incrementAndGet() == 1000) {
                         val amount = count.getAndSet(0)
                         println("$amount in ${mark.getAndSet(markNow()).elapsedNow()} - $size")
