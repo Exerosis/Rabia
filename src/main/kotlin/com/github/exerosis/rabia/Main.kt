@@ -12,6 +12,7 @@ import kotlin.time.ExperimentalTime
 const val INFO = true
 const val DEBUG = false
 const val WARN = true
+const val COUNT = 5
 
 fun run() {
     runBlocking(dispatcher) {
@@ -29,7 +30,6 @@ fun run() {
             getByName("192.168.1.2"),
             getByName("192.168.1.3"),
         )
-
 
         SMR(3, address, nodes,
             queue=1000, repair=2000,
