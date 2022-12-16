@@ -65,15 +65,15 @@ fun CoroutineScope.SMR(
         val to = using.minOrNull()?.minus(1) ?: highest.get()
 //        println("InUse: $using Committed: $committed To: $to Highest: ${highest.get()}")
         for (i in (committed.get() + 1)..to) {
-            if (log[i] == -1L) continue
-            val message = messages[log[i]]
+            if (log[i % log.length()] == -1L) continue
+            val message = messages[log[i % log.length()]]
             if (message != null) {
                 commit(message)
                 committed.set(i)
                 continue
             }
             for (j in to downTo i + 1)
-                if (log[j] == 0L || messages[log[j]] == null)
+                if (log[j % log.length()] == 0L || messages[log[j % log.length()]] == null)
                     return repair(i, j)
             break
         }
