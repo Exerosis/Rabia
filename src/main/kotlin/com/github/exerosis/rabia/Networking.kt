@@ -52,16 +52,18 @@ suspend fun TCP(
     vararg addresses: InetSocketAddress
 ): Multicaster {
     val server = ServerSocketChannel.open()
+    server.configureBlocking(false)
     server.bind(InetSocketAddress(address, port))
     val scope = CoroutineScope(dispatcher)
     val outbound = ConcurrentLinkedQueue<SocketChannel>()
     val inbound = ConcurrentLinkedQueue<SocketChannel>()
     scope.launch {
         while (server.isOpen && isActive)
-            server.accept().apply {
+            server.accept()?.apply {
+                configureBlocking(false)
                 setOption(SO_SNDBUF, size)
                 setOption(SO_RCVBUF, size)
-//                setOption(TCP_NODELAY, true)
+                setOption(TCP_NODELAY, true)
 //                setOption(TCP_QUICKACK, true)
                 inbound.add(this)
             }
@@ -69,9 +71,10 @@ suspend fun TCP(
     addresses.map {
         scope.async { while (true) try {
             return@async outbound.add(SocketChannel.open(it).apply {
+                configureBlocking(false)
                 setOption(SO_SNDBUF, size)
                 setOption(SO_RCVBUF, size)
-//                setOption(TCP_NODELAY, true)
+                setOption(TCP_NODELAY, true)
 //            setOption(TCP_QUICKACK, true)
             })
         } catch (_: Throwable) {}}
