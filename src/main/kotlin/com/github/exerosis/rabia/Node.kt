@@ -103,7 +103,7 @@ suspend fun Node(
             when (op) {
                 STATE_ONE or p -> ++one
                 STATE_ZERO or p -> ++zero
-                else -> error("LOST MESSAGE")
+                else -> warn("LOST MESSAGE")
             }
         }
 //        profileState.end()
@@ -137,7 +137,7 @@ suspend fun Node(
                 VOTE_ONE or p -> ++one
                 VOTE_ZERO or p -> ++zero
                 VOTE_LOST or p -> ++lost
-                else -> error("LOST MESSAGE")
+                else -> warn("LOST MESSAGE")
             }
         }
 //        profileVote.end()
