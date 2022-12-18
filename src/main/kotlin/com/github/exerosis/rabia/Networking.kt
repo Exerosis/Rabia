@@ -223,12 +223,14 @@ suspend fun TCP(
     })
 
     addresses.forEach {
-        outbound.add(Outbound(AsynchronousSocketChannel.open(group).apply {
-            connect(it).get()
-            setOption(SO_SNDBUF, size)
-            setOption(SO_RCVBUF, size)
-            setOption(TCP_NODELAY, true)
-        }))
+        while (true) try {
+            outbound.add(Outbound(AsynchronousSocketChannel.open(group).apply {
+                connect(it).get()
+                setOption(SO_SNDBUF, size)
+                setOption(SO_RCVBUF, size)
+                setOption(TCP_NODELAY, true)
+            }))
+        } catch (_: Throwable) {}
     }
     return object : Multicaster {
         override val isOpen = server.isOpen
