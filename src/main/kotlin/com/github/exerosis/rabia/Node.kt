@@ -177,7 +177,7 @@ suspend fun Node(
 //                val test = System.nanoTime() + 100_000
 //                while (System.nanoTime() < test) {}
                 //create this lazily
-                random = Random(current)
+//                random = Random(current)
                 while (index < majority) {
                     var from: InetAddress = loopback
                     var proposal = savedProposals.poll(current)
