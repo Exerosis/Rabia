@@ -216,6 +216,9 @@ suspend fun TCP(
     val inbound = CopyOnWriteArrayList<Inbound>()
     server.accept(Unit, object : CompletionHandler<AsynchronousSocketChannel, Unit> {
         override fun completed(result: AsynchronousSocketChannel, attachment: Unit) {
+            result.setOption(SO_SNDBUF, size)
+            result.setOption(SO_RCVBUF, size)
+            result.setOption(TCP_NODELAY, true)
             inbound.add(Inbound(result))
             server.accept(Unit, this)
         }
