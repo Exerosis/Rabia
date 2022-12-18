@@ -47,7 +47,7 @@ fun UDP(
     }
 }
 
-suspend fun TCPNonBlock(
+suspend fun TCP(
     address: InetAddress,
     port: Int, size: Int,
     vararg addresses: InetSocketAddress
@@ -118,7 +118,7 @@ suspend fun TCPNonBlock(
     }
 }
 
-suspend fun TCP(
+suspend fun TCPBlo(
     address: InetAddress,
     port: Int, size: Int,
     vararg addresses: InetSocketAddress
