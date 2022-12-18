@@ -10,6 +10,7 @@ import java.nio.ByteBuffer
 import java.nio.channels.DatagramChannel
 import java.nio.channels.ServerSocketChannel
 import java.nio.channels.SocketChannel
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CopyOnWriteArrayList
 
 const val BROADCAST = "230.0.0.0" //230
@@ -46,13 +47,83 @@ fun UDP(
     }
 }
 
-suspend fun TCP(
+suspend fun TCPNonBlock(
     address: InetAddress,
     port: Int, size: Int,
     vararg addresses: InetSocketAddress
 ): Multicaster {
     val server = ServerSocketChannel.open()
     server.configureBlocking(false)
+    server.bind(InetSocketAddress(address, port))
+    val scope = CoroutineScope(dispatcher)
+    val outbound = ConcurrentLinkedQueue<SocketChannel>()
+    val inbound = ConcurrentLinkedQueue<SocketChannel>()
+    scope.launch {
+        while (server.isOpen && isActive)
+            server.accept()?.apply {
+                configureBlocking(false)
+                setOption(SO_SNDBUF, size)
+                setOption(SO_RCVBUF, size)
+                setOption(TCP_NODELAY, true)
+//                setOption(TCP_QUICKACK, true)
+                inbound.add(this)
+            }
+    }
+    addresses.map {
+        scope.async { while (true) try {
+            return@async outbound.add(SocketChannel.open(it).apply {
+                configureBlocking(false)
+                setOption(SO_SNDBUF, size)
+                setOption(SO_RCVBUF, size)
+                setOption(TCP_NODELAY, true)
+//            setOption(TCP_QUICKACK, true)
+            })
+        } catch (_: Throwable) {}}
+    }.forEach { it.await() }
+    return object : Multicaster {
+        override val isOpen = server.isOpen
+        override fun close() = runBlocking { scope.cancel(); server.close() }
+        override suspend fun send(buffer: ByteBuffer) {
+//            withContext(Dispatchers.IO) {
+                outbound.map {
+                    val copy = buffer.duplicate()
+                    scope.async {
+                        try {
+                            while (copy.hasRemaining()) {
+                                it.write(copy)
+                                Thread.onSpinWait()
+                            }
+                        } catch (reason: Throwable) {
+                            reason.printStackTrace()
+                        }
+                    }
+                }.awaitAll()
+//            }
+        }
+        override suspend fun receive(buffer: ByteBuffer): InetSocketAddress {
+            //TODO Switch to round robin
+            while (true) {
+                inbound.shuffled().forEach {
+                    if (it.read(buffer) != 0) {
+                        while (buffer.hasRemaining()) {
+                            it.read(buffer)
+                            Thread.onSpinWait()
+                        }
+                        return it.remoteAddress as InetSocketAddress
+                    }
+                }
+                Thread.onSpinWait()
+            }
+        }
+    }
+}
+
+suspend fun TCP(
+    address: InetAddress,
+    port: Int, size: Int,
+    vararg addresses: InetSocketAddress
+): Multicaster {
+    val server = ServerSocketChannel.open()
     server.bind(InetSocketAddress(address, port))
     val scope = CoroutineScope(dispatcher)
     val outbound = CopyOnWriteArrayList<SocketChannel>()
