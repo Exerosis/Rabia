@@ -36,7 +36,7 @@ fun run() {
             queue=1000, repair=2000,
             pipes=intArrayOf(3000)
         ) {
-            println("${index++}: $it")
+//            println("${index++}: $it")
         }
     }
     println("Exited Run")
