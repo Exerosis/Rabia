@@ -216,26 +216,20 @@ suspend fun TCP(
     val inbound = CopyOnWriteArrayList<Inbound>()
     server.accept(Unit, object : CompletionHandler<AsynchronousSocketChannel, Unit> {
         override fun completed(result: AsynchronousSocketChannel, attachment: Unit) {
-            println("Accepting new one!")
             inbound.add(Inbound(result))
             server.accept(Unit, this)
         }
         override fun failed(reason: Throwable, attachment: Unit) = throw reason
     })
 
-
-    addresses.map {
-        scope.async {
-            while (true) try {
-            return@async outbound.add(Outbound(AsynchronousSocketChannel.open(group).apply {
-                connect(it).get()
-                setOption(SO_SNDBUF, size)
-                setOption(SO_RCVBUF, size)
-                setOption(TCP_NODELAY, true)
-            }))
-        } catch (_: Throwable) {}}
-    }.awaitAll()
-    println("Connected to others!")
+    addresses.forEach {
+        outbound.add(Outbound(AsynchronousSocketChannel.open(group).apply {
+            connect(it).get()
+            setOption(SO_SNDBUF, size)
+            setOption(SO_RCVBUF, size)
+            setOption(TCP_NODELAY, true)
+        }))
+    }
     return object : Multicaster {
         override val isOpen = server.isOpen
         override fun close() = runBlocking { scope.cancel(); server.close() }
