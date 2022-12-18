@@ -63,7 +63,7 @@ suspend fun TCP(
                 configureBlocking(false)
                 setOption(SO_SNDBUF, size)
                 setOption(SO_RCVBUF, size)
-                setOption(TCP_NODELAY, true)
+//                setOption(TCP_NODELAY, true)
 //                setOption(TCP_QUICKACK, true)
                 inbound.add(this)
             }
@@ -74,7 +74,7 @@ suspend fun TCP(
                 configureBlocking(false)
                 setOption(SO_SNDBUF, size)
                 setOption(SO_RCVBUF, size)
-                setOption(TCP_NODELAY, true)
+//                setOption(TCP_NODELAY, true)
 //            setOption(TCP_QUICKACK, true)
             })
         } catch (_: Throwable) {}}
