@@ -174,7 +174,7 @@ suspend fun TCPB(
 
 
 
-suspend fun TCPI(
+suspend fun TCP(
     address: InetAddress,
     port: Int, size: Int,
     vararg addresses: InetSocketAddress
@@ -216,6 +216,7 @@ suspend fun TCPI(
     val inbound = CopyOnWriteArrayList<Inbound>()
     server.accept(Unit, object : CompletionHandler<AsynchronousSocketChannel, Unit> {
         override fun completed(result: AsynchronousSocketChannel, attachment: Unit) {
+            println("Accepting new one!")
             inbound.add(Inbound(result))
             server.accept(Unit, this)
         }
@@ -261,7 +262,7 @@ suspend fun TCPI(
     }
 }
 
-suspend fun TCP(
+suspend fun TCPM(
     address: InetAddress,
     port: Int, size: Int,
     vararg addresses: InetSocketAddress
