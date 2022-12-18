@@ -10,7 +10,7 @@ import java.nio.ByteBuffer
 import java.nio.channels.DatagramChannel
 import java.nio.channels.ServerSocketChannel
 import java.nio.channels.SocketChannel
-import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.CopyOnWriteArrayList
 
 const val BROADCAST = "230.0.0.0" //230
 
@@ -55,12 +55,11 @@ suspend fun TCP(
     server.configureBlocking(false)
     server.bind(InetSocketAddress(address, port))
     val scope = CoroutineScope(dispatcher)
-    val outbound = ConcurrentLinkedQueue<SocketChannel>()
-    val inbound = ConcurrentLinkedQueue<SocketChannel>()
+    val outbound = CopyOnWriteArrayList<SocketChannel>()
+    val inbound = CopyOnWriteArrayList<SocketChannel>()
     scope.launch {
         while (server.isOpen && isActive)
             server.accept()?.apply {
-                configureBlocking(false)
                 setOption(SO_SNDBUF, size)
                 setOption(SO_RCVBUF, size)
                 setOption(TCP_NODELAY, true)
@@ -71,7 +70,6 @@ suspend fun TCP(
     addresses.map {
         scope.async { while (true) try {
             return@async outbound.add(SocketChannel.open(it).apply {
-                configureBlocking(false)
                 setOption(SO_SNDBUF, size)
                 setOption(SO_RCVBUF, size)
                 setOption(TCP_NODELAY, true)
@@ -83,36 +81,16 @@ suspend fun TCP(
         override val isOpen = server.isOpen
         override fun close() = runBlocking { scope.cancel(); server.close() }
         override suspend fun send(buffer: ByteBuffer) {
-//            withContext(Dispatchers.IO) {
-                outbound.map {
-                    val copy = buffer.duplicate()
-                    scope.async {
-                        try {
-                            while (copy.hasRemaining()) {
-                                it.write(copy)
-                                Thread.onSpinWait()
-                            }
-                        } catch (reason: Throwable) {
-                            reason.printStackTrace()
-                        }
-                    }
-                }.awaitAll()
-//            }
+            outbound.map {
+                val copy = buffer.duplicate()
+                scope.async { it.write(copy) }
+            }.awaitAll()
         }
+        var i = 0
         override suspend fun receive(buffer: ByteBuffer): InetSocketAddress {
-            //TODO Switch to round robin
-            while (true) {
-                inbound.shuffled().forEach {
-                    if (it.read(buffer) != 0) {
-                        while (buffer.hasRemaining()) {
-                            it.read(buffer)
-                            Thread.onSpinWait()
-                        }
-                        return it.remoteAddress as InetSocketAddress
-                    }
-                }
-                Thread.onSpinWait()
-            }
+            val socket = inbound[i++ % inbound.size]
+            socket.read(buffer)
+            return socket.remoteAddress as InetSocketAddress
         }
     }
 }
