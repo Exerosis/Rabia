@@ -49,7 +49,7 @@ suspend fun Node(
         InetSocketAddress(it, port + 2)
     }.toTypedArray())
     val buffer = allocateDirect(12)
-
+    println("Ready")
     val proposals = LongArray(majority)
     var random = Random(0)
 
