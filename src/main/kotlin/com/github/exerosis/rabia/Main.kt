@@ -12,7 +12,7 @@ import kotlin.time.ExperimentalTime
 const val INFO = false
 const val DEBUG = false
 const val WARN = true
-const val COUNT = 50_000
+const val COUNT = 500_000
 
 fun run() {
     runBlocking(dispatcher) {
