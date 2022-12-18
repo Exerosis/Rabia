@@ -218,7 +218,7 @@ suspend fun TCP(
         override fun completed(result: AsynchronousSocketChannel, attachment: Unit) {
             result.setOption(SO_SNDBUF, size)
             result.setOption(SO_RCVBUF, size)
-            result.setOption(TCP_NODELAY, true)
+            result.setOption(TCP_NODELAY, false)
             inbound.add(Inbound(result))
             server.accept(Unit, this)
         }
@@ -231,7 +231,7 @@ suspend fun TCP(
                 connect(it).get()
                 setOption(SO_SNDBUF, size)
                 setOption(SO_RCVBUF, size)
-                setOption(TCP_NODELAY, true)
+                setOption(TCP_NODELAY, false)
             })); return@forEach
         } catch (_: Throwable) {}
     }
