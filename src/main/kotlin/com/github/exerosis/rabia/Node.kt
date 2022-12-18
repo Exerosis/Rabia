@@ -39,13 +39,13 @@ suspend fun Node(
     val f = n / 2
     val majority = (n / 2) + 1
     info("N: $n F: $f Majority: $majority")
-    val proposes = TCP(address, port, 65527, *nodes.map {
+    val proposes = TCP(address, port, 65527 * 5, *nodes.map {
         InetSocketAddress(it, port)
     }.toTypedArray())
-    val states = TCP(address, port + 1, 65527, *nodes.map {
+    val states = TCP(address, port + 1, 65527 * 5, *nodes.map {
         InetSocketAddress(it, port + 1)
     }.toTypedArray())
-    val votes = TCP(address, port + 2, 65527, *nodes.map {
+    val votes = TCP(address, port + 2, 65527 * 5, *nodes.map {
         InetSocketAddress(it, port + 2)
     }.toTypedArray())
     val buffer = allocateDirect(12)
