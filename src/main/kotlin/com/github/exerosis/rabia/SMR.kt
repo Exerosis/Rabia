@@ -100,7 +100,7 @@ fun CoroutineScope.SMR(
     val mark = AtomicReference(markNow())
     val count = AtomicInteger(0)
     instances.forEachIndexed { i, it -> it.apply {
-        launch(CoroutineName("Pipe-$i")) { try {
+        launch(CoroutineName("Pipe-$i") + dispatcher) { try {
             var last = -1L; var slot = i
             Node(pipes[i], address, n, { depth, id ->
                 if (depth != slot) warn("DEPTH OFF: $depth != $slot")
