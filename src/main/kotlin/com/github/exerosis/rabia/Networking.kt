@@ -233,7 +233,8 @@ suspend fun TCPI(
                 setOption(TCP_NODELAY, true)
             }))
         } catch (_: Throwable) {}}
-    }.forEach { it.await() }
+    }.awaitAll()
+    println("Connected to others!")
     return object : Multicaster {
         override val isOpen = server.isOpen
         override fun close() = runBlocking { scope.cancel(); server.close() }
@@ -279,6 +280,7 @@ suspend fun TCP(
         } catch (_: Throwable) {}
         provider.connect(it)
     }
+    println("Connected to others!")
     scope.launch {
         while (provider.isOpen && isActive)
             inbound.add(provider.accept(InetSocketAddress(address, port)))
