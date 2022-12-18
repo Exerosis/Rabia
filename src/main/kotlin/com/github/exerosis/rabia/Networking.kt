@@ -1,5 +1,7 @@
 package com.github.exerosis.rabia
 
+import com.github.exerosis.mynt.SocketProvider
+import com.github.exerosis.mynt.base.Connection
 import kotlinx.coroutines.*
 import java.net.InetAddress
 import java.net.InetSocketAddress
@@ -172,7 +174,7 @@ suspend fun TCPB(
 
 
 
-suspend fun TCP(
+suspend fun TCPI(
     address: InetAddress,
     port: Int, size: Int,
     vararg addresses: InetSocketAddress
@@ -240,7 +242,10 @@ suspend fun TCP(
             suspendCoroutineUninterceptedOrReturn { next ->
                 remaining.set(outbound.size)
                 outboundContinuation.set(next)
-                outbound.forEach { it.socket.write(buffer, buffer, it) }
+                outbound.forEach {
+                    val copy = buffer.duplicate()
+                    it.socket.write(copy, copy, it)
+                }
                 COROUTINE_SUSPENDED
             }
 
@@ -252,5 +257,47 @@ suspend fun TCP(
                 handler.socket.read(buffer, buffer, handler)
                 COROUTINE_SUSPENDED
             }
+    }
+}
+
+suspend fun TCP(
+    address: InetAddress,
+    port: Int, size: Int,
+    vararg addresses: InetSocketAddress
+): Multicaster {
+    val group = AsynchronousChannelGroup.withThreadPool(executor)
+    val provider = SocketProvider(0, group) {
+        it.setOption(SO_SNDBUF, size)
+        it.setOption(SO_RCVBUF, size)
+        it.setOption(TCP_NODELAY, true)
+    }
+    val scope = CoroutineScope(dispatcher)
+    val inbound = CopyOnWriteArrayList<Connection>()
+    val outbound = addresses.map {
+        while (true) try {
+            provider.connect(it)
+        } catch (_: Throwable) {}
+        provider.connect(it)
+    }
+    scope.launch {
+        while (provider.isOpen && isActive)
+            inbound.add(provider.accept(InetSocketAddress(address, port)))
+    }
+    return object : Multicaster {
+        override val isOpen = provider.isOpen
+        override fun close() = runBlocking { scope.cancel(); provider.close() }
+
+        override suspend fun send(buffer: ByteBuffer) {
+            outbound.map { scope.async {
+                it.write.buffer(buffer.duplicate())
+            } }.awaitAll()
+        }
+
+        var i = 0
+        override suspend fun receive(buffer: ByteBuffer): InetSocketAddress {
+            val connection = inbound[i++ % inbound.size]
+            connection.read.buffer(buffer)
+            return connection.address
+        }
     }
 }
