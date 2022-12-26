@@ -56,6 +56,12 @@ fun CoroutineScope.SMR(
     val provider = SocketProvider(65536, group)
     val instances = Array(pipes.size) { Node(10, COMPARATOR) }
 
+    for (i in 0..COUNT) {
+        val id = i.toLong()
+        messages[id] = ""
+        instances[abs(id % instances.size).toInt()].offer(id)
+    }
+
     suspend fun repair(start: Int, end: Int) {
         warn("Repair: $start - $end")
         val repairs = nodes.map { InetSocketAddress(it, repair) }.toMutableList()
@@ -154,20 +160,20 @@ fun CoroutineScope.SMR(
         }
         println("No Longer Catching Up")
     } catch (reason: Throwable) { reason.printStackTrace() } }
-    launch { try {
-        val socket = InetSocketAddress(address, queue)
-        while (provider.isOpen && isActive) {
-            provider.accept(socket).apply { launch {
-                while (isActive && isOpen) {
-                    val id = read.long()
-                    messages[id] = read.bytes(read.int()).toString(UTF_8)
-                    val instance = instances[abs(id % instances.size).toInt()]
-                    instance.offer(id)
-                }; close()
-            } }
-        }
-        println("No Longer Accepting Messages")
-    } catch (reason: Throwable) { reason.printStackTrace() } }
+//    launch { try {
+//        val socket = InetSocketAddress(address, queue)
+//        while (provider.isOpen && isActive) {
+//            provider.accept(socket).apply { launch {
+//                while (isActive && isOpen) {
+//                    val id = read.long()
+//                    messages[id] = read.bytes(read.int()).toString(UTF_8)
+//                    val instance = instances[abs(id % instances.size).toInt()]
+//                    instance.offer(id)
+//                }; close()
+//            } }
+//        }
+//        println("No Longer Accepting Messages")
+//    } catch (reason: Throwable) { reason.printStackTrace() } }
     launch { try {
         val socket = InetSocketAddress(address, repair)
         while (provider.isOpen) {

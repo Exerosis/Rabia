@@ -3,6 +3,7 @@ package com.github.exerosis.rabia
 import kotlinx.coroutines.*
 import java.net.InetAddress
 import java.net.InetSocketAddress
+import java.nio.ByteBuffer
 import java.nio.ByteBuffer.allocateDirect
 import java.util.*
 import java.util.concurrent.Executors
@@ -48,9 +49,12 @@ suspend fun Node(
     val votes = TCP(address, port + 2, 65527 * 5, *nodes.map {
         InetSocketAddress(it, port + 2)
     }.toTypedArray())
-    val buffer = allocateDirect(12)
+
+
+
     val proposals = LongArray(majority)
     var random = Random(0)
+    val buffer = allocateDirect(12)
 
     val savedProposals = HashMap<Int, LinkedList<Long>>()
     val savedVotes = HashMap<Int, LinkedList<Byte>>()
