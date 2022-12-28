@@ -125,7 +125,7 @@ suspend fun State.Node(
                     one > 0 -> STATE_ONE
                     zero > 0 -> STATE_ZERO
                     else -> {
-                        error("Rolling: $phase")
+//                        error("Rolling: $phase")
                         if (Random(height).nextBoolean())
                             STATE_ZERO else STATE_ONE
                     }
