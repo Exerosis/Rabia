@@ -57,6 +57,7 @@ suspend fun State.Node(
             val depth = buffer.getInt(0)
             if (depth < current) continue
             val proposal = buffer.getLong(4)
+            println("Depth: $depth")
             info("Got Proposal: $proposal - $current $from")
             proposals[depth shl 8 or index] = proposal
             ++indices[depth]
