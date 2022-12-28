@@ -117,7 +117,8 @@ suspend fun State.Node(
 
             if (one >= f + 1) {
 //                if (!all) error("This should be -1")
-                commit(if (all) proposal else -1)
+//                commit(if (all) proposal else -1)
+                commit(proposal)
             } else if (zero >= f + 1) commit(-1) else {
                 ++phase
                 state = when {
