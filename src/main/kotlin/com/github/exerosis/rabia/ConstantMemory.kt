@@ -127,7 +127,6 @@ suspend fun State.Node(
             votesLost[height] = 0
 
             if (one >= f + 1) {
-                println("")
                 if (!all) error("This should be -1")
                 commit(proposal)
             } else if (zero >= f + 1) commit(-1) else {
