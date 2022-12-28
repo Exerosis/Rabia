@@ -139,8 +139,8 @@ suspend fun State.Node(
                         if (Random(height).nextBoolean())
                             STATE_ZERO else STATE_ONE
                     }
-                }
-            }
+                }; continue
+            }; continue@outer
         }
         error("For now lets not do this!")
     }
