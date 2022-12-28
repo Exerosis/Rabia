@@ -118,8 +118,8 @@ fun CoroutineScope.SMR(
                 } else {
                     log[slot % log.size] = id
                     //Update the highest index that contains a value.
-                    var current: Int; do { current = highest.get() }
-                    while (current < slot && !highest.compareAndSet(current, slot))
+//                    var current: Int; do { current = highest.get() }
+//                    while (current < slot && !highest.compareAndSet(current, slot))
                     //Could potentially move slot forward by more than one increment
                     using.remove(slot)
                     slot += pipes.size
