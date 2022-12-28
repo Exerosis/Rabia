@@ -52,13 +52,15 @@ suspend fun State.Node(
 
         buffer.clear().putInt(current).putLong(proposed)
         proposes.send(buffer.flip())
+        info("Sent Proposal: $proposed - $current")
 
         while (indices[current] < majority) {
             val index = indices[current]
-            proposes.receive(buffer.clear())
+            val from = proposes.receive(buffer.clear()).address
             val depth = buffer.getInt(0)
             if (depth < current) continue
             val proposal = buffer.getLong(4)
+            info("Got Proposal: $proposal - $current $from")
             proposals[depth, index] = proposal
             ++indices[depth]
         }
@@ -71,11 +73,14 @@ suspend fun State.Node(
             val height = current shl 8 or phase
             buffer.clear().putInt(height).put(state)
             states.send(buffer.flip())
+            info("Sent State: $state - $slot")
             while (statesZero[height] + statesOne[height] < majority) {
-                states.receive(buffer.clear().limit(5))
+                val from = states.receive(buffer.clear().limit(5)).address
                 val depth = buffer.getInt(0)
                 if (depth shr 8 < current) continue
-                when (buffer.get(4)) {
+                val op = buffer.get(4)
+                info("Got State (${statesZero[height] + statesOne[height] + 1}/$majority): $op - $slot $from")
+                when (op) {
                     STATE_ONE -> ++statesOne[depth]
                     STATE_ZERO -> ++statesZero[depth]
                     else -> error("Invalid state!")
@@ -91,12 +96,15 @@ suspend fun State.Node(
 
             buffer.clear().putInt(height).put(vote)
             votes.send(buffer.flip())
+            info("Sent Vote: $vote - $slot")
             //TODO can we reduce the amount we wait for here.
             while (votesZero[height] + votesOne[height] + votesLost[height] < majority) {
-                votes.receive(buffer.clear().limit(5))
+                val from = votes.receive(buffer.clear().limit(5)).address
                 val depth = buffer.getInt(0)
                 if (depth shr 8 < current) continue
-                when (buffer.get(4)) {
+                val op = buffer.get(4)
+                info("Got Vote (${votesZero[height] + votesOne[height] + votesLost[height] + 1}/$majority): $op - $slot $from")
+                when (op) {
                     VOTE_ZERO -> ++votesZero[depth]
                     VOTE_ONE -> ++votesOne[depth]
                     VOTE_LOST -> ++votesLost[depth]
