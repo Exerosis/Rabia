@@ -9,7 +9,7 @@ import java.net.NetworkInterface
 import kotlin.streams.asSequence
 import kotlin.time.ExperimentalTime
 
-const val INFO = false
+const val INFO = true
 const val DEBUG = false
 const val WARN = true
 const val COUNT = 1_000_000
