@@ -14,7 +14,7 @@ const val VOTE_LOST = 2.toByte()
 
 class State(logs: Int, majority: Int) {
     val indices = IntArray(logs)
-    val proposals = LongArray(logs * majority)
+    val proposals = Array(majority) { LongArray(logs) }
     val statesZero = ByteArray(logs * 256)
     val statesOne = ByteArray(logs * 256)
     val votesZero = ByteArray(logs * 256)
@@ -59,12 +59,12 @@ suspend fun State.Node(
             val proposal = buffer.getLong(4)
             println("Depth: $depth")
             info("Got Proposal: $proposal - $current $from")
-            proposals[depth shl 8 or index] = proposal
+            proposals[index][depth] = proposal
             ++indices[depth]
         }
-        val proposal = proposals[current shl 8]
+        val proposal = proposals[0][current]
         println("The proposal: $proposal")
-        val all = (1 until majority).all { proposals[current shl 8 or it] == proposal }
+        val all = (1 until majority).all { proposals[it][current] == proposal }
         indices[current] = 0
         var phase = 0
         var state = if (all) STATE_ONE else STATE_ZERO
