@@ -57,13 +57,11 @@ suspend fun State.Node(
             val depth = buffer.getInt(0)
             if (depth < current) continue
             val proposal = buffer.getLong(4)
-            println("Depth: $depth")
             info("Got Proposal: $proposal - $current $from")
             proposals[index][depth] = proposal
             ++indices[depth]
         }
         val proposal = proposals[0][current]
-        println("The proposal: $proposal")
         val all = (1 until majority).all { proposals[it][current] == proposal }
         indices[current] = 0
         var phase = 0
