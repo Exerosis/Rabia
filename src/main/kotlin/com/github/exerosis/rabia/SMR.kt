@@ -143,7 +143,6 @@ fun CoroutineScope.SMR(
             }, *nodes)
         } catch (reason: Throwable) {
             reason.printStackTrace()
-            println("here")
         }
             info("No Longer Running")
             cancel("Please everything die")
