@@ -32,7 +32,7 @@ val test = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
 @OptIn(ExperimentalTime::class)
 suspend fun Node(
     port: Int, address: InetAddress, n: Int,
-    commit: suspend (Int, Long) -> (Unit),
+    commit: suspend (Long) -> (Unit),
     messages: suspend () -> (Long),
     slot: suspend () -> (Int),
     vararg nodes: InetAddress
@@ -205,12 +205,12 @@ suspend fun Node(
                     for (i in 0 until index)
                         if (proposals[i] == proposal && ++count >= majority) {
                             info("Got Proposal: $proposal - $current $from")//candidate
-                            return@withTimeout commit(current, phase(0, STATE_ONE, proposals[i], current))
+                            return@withTimeout commit(phase(0, STATE_ONE, proposals[i], current))
                         }
                     info("Got Proposal: $proposal - $current $from")//candidate
                     proposals[index++] = proposal
                 }
-                commit(current, phase(0, STATE_ZERO, -1, current))
+                commit(phase(0, STATE_ZERO, -1, current))
             }
             profileRound.end()
         } catch (reason: Throwable) {
@@ -218,7 +218,7 @@ suspend fun Node(
                 warn("Timed Out")
             } else throw reason
             break@outer
-            commit(current, 0)
+            commit(0)
         }
     }
 }

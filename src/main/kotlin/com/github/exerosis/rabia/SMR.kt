@@ -104,29 +104,26 @@ fun CoroutineScope.SMR(
     }
     val mark = AtomicReference(markNow())
     val count = AtomicInteger(0)
+    val state = State(log.length(), (n / 2) + 1)
     instances.forEachIndexed { i, it -> it.apply {
         launch(CoroutineName("Pipe-$i") + dispatcher) { try {
             var last = -1L; var slot = i
-            Node(pipes[i], address, n, { depth, id ->
-                if (depth != slot) warn("DEPTH OFF: $depth != $slot")
-//                println("$depth - $id != $last")
-//                println("Depth: $depth Id: $id - ${messages[id]}")
+            state.Node(pipes[i], address, n, { id ->
+                println("Got: $id")
                 if (id != last)
                     warn("Bad Sync: $id != $last")
 //                if (id == 0L) { error("Trying to erase!") }
-                if (depth < slot) { error("Trying to reinsert!") } //is this actually an issue?
-                if (depth % pipes.size != i) { error("Trying to pipe mix!") }
                 if (id != last) {
                     offer(last)
-                    if (depth > slot && id == 0L) repair(slot, depth)
+//                    if (depth > slot && id == 0L) repair(slot, depth)
                 } else {
-                    log[depth % log.length()] = id
+                    log[slot % log.length()] = id
                     //Update the highest index that contains a value.
                     var current: Int; do { current = highest.get() }
-                    while (current < depth && !highest.compareAndSet(current, depth))
+                    while (current < slot && !highest.compareAndSet(current, slot))
                     //Could potentially move slot forward by more than one increment
                     using.remove(slot)
-                    slot = depth + pipes.size
+                    slot += pipes.size
                     //Will this be enough to keep the logs properly cleared?
                     messages.remove(log[slot % log.length()])
                     log[slot % log.length()] = 0L
@@ -135,9 +132,9 @@ fun CoroutineScope.SMR(
                         println("$amount in ${mark.getAndSet(markNow()).elapsedNow()}")
                     }
                 }
-                info("Log: $log")
+                debug("Log: $log")
             }, {
-                info("Size: $size")
+                debug("Size: $size")
 //                while (isActive && (slot - committed.get()) >= log.length()) {}
                 take().also<Long> { last = it }
             }, {

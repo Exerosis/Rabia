@@ -18,12 +18,12 @@ class State(logs: Int, majority: Int) {
 operator fun LongArray.get(index: Int, phase: Int) =
     this[index shl 8 or phase]
 operator fun LongArray.set(index: Int, phase: Int, value: Long)
-{ this[index shl 8 or phase] = value }
+    { this[index shl 8 or phase] = value }
 
 operator fun ByteArray.get(index: Int, phase: Int) =
     this[index shl 8 or phase]
 operator fun ByteArray.set(index: Int, phase: Int, value: Byte)
-{ this[index shl 8 or phase] = value }
+    { this[index shl 8 or phase] = value }
 
 suspend fun State.Node(
     port: Int, address: InetAddress, n: Int,
