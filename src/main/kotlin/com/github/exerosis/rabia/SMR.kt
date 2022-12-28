@@ -47,7 +47,7 @@ fun CoroutineScope.SMR(
     vararg pipes: Int,
     commit: (String) -> (Unit)
 ) {
-    val log = AtomicLongArray(20) //Filled with NONE
+    val log = LongArray(65536) //Filled with NONE
     val messages = ConcurrentHashMap<Long, String>()
     val committed = AtomicInteger(-1)
     val highest = AtomicInteger(-1)
@@ -77,7 +77,7 @@ fun CoroutineScope.SMR(
                             if (bytes.isNotEmpty())
                                 messages[id] = bytes.toString(UTF_8);
                             instances[abs(id % instances.size).toInt()].remove(id)
-                            log[i % log.length()] = id
+                            log[i % log.size] = id
                         }; close()
                     }; true
                 }
@@ -90,21 +90,21 @@ fun CoroutineScope.SMR(
         val to = using.minOrNull()?.minus(1) ?: highest.get()
 //        println("InUse: $using Committed: $committed To: $to Highest: ${highest.get()}")
         for (i in (committed.get() + 1)..to) {
-            val message = messages[log[i % log.length()]]
+            val message = messages[log[i % log.size]]
             if (message != null) {
                 commit(message)
                 committed.set(i)
                 continue
             }
             for (j in (to - pipes.size) downTo i + 1)
-                if (log[j % log.length()] == 0L || messages[log[j % log.length()]] == null)
+                if (log[j % log.size] == 0L || messages[log[j % log.size]] == null)
                     return repair(i, j)
             break
         }
     }
     val mark = AtomicReference(markNow())
     val count = AtomicInteger(0)
-    val state = State(log.length(), (n / 2) + 1)
+    val state = State(log.size, (n / 2) + 1)
     instances.forEachIndexed { i, it -> it.apply {
         launch(CoroutineName("Pipe-$i") + dispatcher) { try {
             var last = -1L; var slot = i
@@ -116,7 +116,7 @@ fun CoroutineScope.SMR(
                     offer(last)
 //                    if (depth > slot && id == 0L) repair(slot, depth)
                 } else {
-                    log[slot % log.length()] = id
+                    log[slot % log.size] = id
                     //Update the highest index that contains a value.
                     var current: Int; do { current = highest.get() }
                     while (current < slot && !highest.compareAndSet(current, slot))
@@ -124,8 +124,8 @@ fun CoroutineScope.SMR(
                     using.remove(slot)
                     slot += pipes.size
                     //Will this be enough to keep the logs properly cleared?
-                    messages.remove(log[slot % log.length()])
-                    log[slot % log.length()] = 0L
+                    messages.remove(log[slot % log.size])
+                    log[slot % log.size] = 0L
                     if (count.incrementAndGet() >= 1000) {
                         val amount = count.getAndSet(0)
                         println("$amount in ${mark.getAndSet(markNow()).elapsedNow()}")
@@ -134,7 +134,7 @@ fun CoroutineScope.SMR(
                 debug("Log: $log")
             }, {
                 debug("Size: $size")
-//                while (isActive && (slot - committed.get()) >= log.length()) {}
+//                while (isActive && (slot - committed.get()) >= log.size) {}
                 take().also<Long> { last = it }
             }, {
                 using.add(slot)
@@ -176,7 +176,7 @@ fun CoroutineScope.SMR(
                 val start = read.int()
                 val end = read.int()
                 for (i in start..end) {
-                    val id = log[i % log.length()]
+                    val id = log[i % log.size]
                     write.long(id)
                     val message = messages[id].orEmpty()
                     val bytes = message.toByteArray(UTF_8)
