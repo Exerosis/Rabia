@@ -5,6 +5,13 @@ import java.net.InetSocketAddress
 import java.nio.ByteBuffer.allocateDirect
 import kotlin.random.Random
 
+const val STATE_ZERO = 0.toByte()
+const val STATE_ONE = 1.toByte()
+
+const val VOTE_ZERO = 0.toByte()
+const val VOTE_ONE = 1.toByte()
+const val VOTE_LOST = 2.toByte()
+
 class State(logs: Int, majority: Int) {
     val indices = IntArray(logs)
     val proposals = LongArray(logs * majority)
@@ -103,7 +110,7 @@ suspend fun State.Node(
                 val depth = buffer.getInt(0)
                 if (depth shr 8 < current) continue
                 val op = buffer.get(4)
-                info("Got Vote (${votesZero[height] + votesOne[height] + votesLost[height] + 1}/$majority): $op - $current $from")
+                info("Got Vote (${votesZero[height] + votesOne[height] + votesLost[height] + 1}/$majority): ${op} - $current $from")
                 when (op) {
                     VOTE_ZERO -> ++votesZero[depth]
                     VOTE_ONE -> ++votesOne[depth]

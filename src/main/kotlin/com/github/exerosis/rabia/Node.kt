@@ -3,7 +3,6 @@ package com.github.exerosis.rabia
 import kotlinx.coroutines.*
 import java.net.InetAddress
 import java.net.InetSocketAddress
-import java.nio.ByteBuffer
 import java.nio.ByteBuffer.allocateDirect
 import java.util.*
 import java.util.concurrent.Executors
@@ -16,12 +15,12 @@ const val OP_STATE = 2L
 const val OP_VOTE = 3L
 const val OP_LOST = 4L
 
-const val STATE_ZERO = (OP_STATE shl 6).toByte()
-const val STATE_ONE = (OP_STATE shl 6 or 32).toByte()
+const val _STATE_ZERO = (OP_STATE shl 6).toByte()
+const val _STATE_ONE = (OP_STATE shl 6 or 32).toByte()
 
-const val VOTE_ZERO = (OP_VOTE shl 6).toByte()
-const val VOTE_ONE = (OP_VOTE shl 6 or 32).toByte()
-const val VOTE_LOST = (OP_LOST shl 6).toByte()
+const val _VOTE_ZERO = (OP_VOTE shl 6).toByte()
+const val _VOTE_ONE = (OP_VOTE shl 6 or 32).toByte()
+const val _VOTE_LOST = (OP_LOST shl 6).toByte()
 
 const val MASK_MID = (0b11L shl 62).inv()
 
@@ -104,17 +103,17 @@ suspend fun Node(
             }
             info("Got State (${zero + one + 1}/$majority): $op - $slot $from")//candidate
             when (op) {
-                STATE_ONE or p -> ++one
-                STATE_ZERO or p -> ++zero
+                _STATE_ONE or p -> ++one
+                _STATE_ZERO or p -> ++zero
                 else -> error("LOST MESSAGE")
             }
         }
 //        profileState.end()
 //        profileVote.start()
         val vote = when {
-            zero >= majority -> VOTE_ZERO
-            one >= majority -> VOTE_ONE
-            else -> VOTE_LOST
+            zero >= majority -> _VOTE_ZERO
+            one >= majority -> _VOTE_ONE
+            else -> _VOTE_LOST
         } or p
         buffer.clear().put(vote).putInt(slot)
         votes.send(buffer.flip())
@@ -137,9 +136,9 @@ suspend fun Node(
             }
             info("Got Vote (${zero + one + lost + 1}/$majority): $op - $slot $from")//candidate
             when (op) {
-                VOTE_ONE or p -> ++one
-                VOTE_ZERO or p -> ++zero
-                VOTE_LOST or p -> ++lost
+                _VOTE_ONE or p -> ++one
+                _VOTE_ZERO or p -> ++zero
+                _VOTE_LOST or p -> ++lost
                 else -> error("LOST MESSAGE")
             }
         }
@@ -151,12 +150,12 @@ suspend fun Node(
         else if (one >= f + 1) common and MASK_MID
         else phase(
             next, when {
-                zero > 0 -> STATE_ZERO
-                one > 0 -> STATE_ONE
+                zero > 0 -> _STATE_ZERO
+                one > 0 -> _STATE_ONE
                 else -> {
                     warn("Rolling: $p")
                     if (random.nextBoolean())
-                        STATE_ZERO else STATE_ONE
+                        _STATE_ZERO else _STATE_ONE
                 }
             }, common, slot
         )
@@ -205,12 +204,12 @@ suspend fun Node(
                     for (i in 0 until index)
                         if (proposals[i] == proposal && ++count >= majority) {
                             info("Got Proposal: $proposal - $current $from")//candidate
-                            return@withTimeout commit(phase(0, STATE_ONE, proposals[i], current))
+                            return@withTimeout commit(phase(0, _STATE_ONE, proposals[i], current))
                         }
                     info("Got Proposal: $proposal - $current $from")//candidate
                     proposals[index++] = proposal
                 }
-                commit(phase(0, STATE_ZERO, -1, current))
+                commit(phase(0, _STATE_ZERO, -1, current))
             }
             profileRound.end()
         } catch (reason: Throwable) {
