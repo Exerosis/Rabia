@@ -22,16 +22,6 @@ class State(logs: Int, majority: Int) {
     val votesLost = ByteArray(logs * 256)
 }
 
-operator fun LongArray.get(index: Int, phase: Int) =
-    this[index shl 8 or phase]
-operator fun LongArray.set(index: Int, phase: Int, value: Long)
-    { this[index shl 8 or phase] = value }
-
-operator fun ByteArray.get(index: Int, phase: Int) =
-    this[index shl 8 or phase]
-operator fun ByteArray.set(index: Int, phase: Int, value: Byte)
-    { this[index shl 8 or phase] = value }
-
 suspend fun State.Node(
     port: Int, address: InetAddress, n: Int,
     commit: suspend (Long) -> (Unit),
@@ -68,12 +58,12 @@ suspend fun State.Node(
             if (depth < current) continue
             val proposal = buffer.getLong(4)
             info("Got Proposal: $proposal - $current $from")
-            proposals[depth, index] = proposal
+            proposals[depth shl 8 or index] = proposal
             ++indices[depth]
         }
-        val proposal = proposals[current, 0]
+        val proposal = proposals[current shl 8]
         println("The proposal: $proposal")
-        val all = (1 until majority).all { proposals[current, it] == proposal }
+        val all = (1 until majority).all { proposals[current shl 8 or it] == proposal }
         indices[current] = 0
         var phase = 0
         var state = if (all) STATE_ONE else STATE_ZERO
@@ -111,7 +101,7 @@ suspend fun State.Node(
                 val depth = buffer.getInt(0)
                 if (depth shr 8 < current) continue
                 val op = buffer.get(4)
-                info("Got Vote (${votesZero[height] + votesOne[height] + votesLost[height] + 1}/$majority): ${op} - $current $from")
+                info("Got Vote (${votesZero[height] + votesOne[height] + votesLost[height] + 1}/$majority): $op - $current $from")
                 when (op) {
                     VOTE_ZERO -> ++votesZero[depth]
                     VOTE_ONE -> ++votesOne[depth]
