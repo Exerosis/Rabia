@@ -47,7 +47,7 @@ fun CoroutineScope.SMR(
     vararg pipes: Int,
     commit: (String) -> (Unit)
 ) {
-    val log = LongArray(65536) //Filled with NONE
+    val log = LongArray(20) //Filled with NONE
     val messages = ConcurrentHashMap<Long, String>()
     val committed = AtomicInteger(-1)
     val highest = AtomicInteger(-1)
@@ -108,7 +108,7 @@ fun CoroutineScope.SMR(
     instances.forEachIndexed { i, it -> it.apply {
         launch(CoroutineName("Pipe-$i") + dispatcher) { try {
             var last = -1L; var slot = i
-            Node(pipes[i], address, n, { id ->
+            state.Node(pipes[i], address, n, { id ->
                 if (id != last)
                     warn("Bad Sync: $id != $last")
 //                if (id == 0L) { error("Trying to erase!") }
