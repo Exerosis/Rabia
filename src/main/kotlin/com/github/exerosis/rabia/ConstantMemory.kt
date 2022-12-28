@@ -45,7 +45,7 @@ suspend fun State.Node(
 
     outer@ while (proposes.isOpen) {
         val proposed = messages()
-        val current = slot() % 16777216
+        val current = slot() % 65536
 
         buffer.clear().putInt(current).putLong(proposed)
         proposes.send(buffer.flip())
