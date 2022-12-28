@@ -73,13 +73,13 @@ suspend fun State.Node(
             val height = current shl 8 or phase
             buffer.clear().putInt(height).put(state)
             states.send(buffer.flip())
-            info("Sent State: $state - $slot")
+            info("Sent State: $state - $current")
             while (statesZero[height] + statesOne[height] < majority) {
                 val from = states.receive(buffer.clear().limit(5)).address
                 val depth = buffer.getInt(0)
                 if (depth shr 8 < current) continue
                 val op = buffer.get(4)
-                info("Got State (${statesZero[height] + statesOne[height] + 1}/$majority): $op - $slot $from")
+                info("Got State (${statesZero[height] + statesOne[height] + 1}/$majority): $op - $current $from")
                 when (op) {
                     STATE_ONE -> ++statesOne[depth]
                     STATE_ZERO -> ++statesZero[depth]
@@ -96,14 +96,14 @@ suspend fun State.Node(
 
             buffer.clear().putInt(height).put(vote)
             votes.send(buffer.flip())
-            info("Sent Vote: $vote - $slot")
+            info("Sent Vote: $vote - $current")
             //TODO can we reduce the amount we wait for here.
             while (votesZero[height] + votesOne[height] + votesLost[height] < majority) {
                 val from = votes.receive(buffer.clear().limit(5)).address
                 val depth = buffer.getInt(0)
                 if (depth shr 8 < current) continue
                 val op = buffer.get(4)
-                info("Got Vote (${votesZero[height] + votesOne[height] + votesLost[height] + 1}/$majority): $op - $slot $from")
+                info("Got Vote (${votesZero[height] + votesOne[height] + votesLost[height] + 1}/$majority): $op - $current $from")
                 when (op) {
                     VOTE_ZERO -> ++votesZero[depth]
                     VOTE_ONE -> ++votesOne[depth]
