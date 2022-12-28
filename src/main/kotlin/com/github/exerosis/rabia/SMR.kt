@@ -109,7 +109,6 @@ fun CoroutineScope.SMR(
         launch(CoroutineName("Pipe-$i") + dispatcher) { try {
             var last = -1L; var slot = i
             state.Node(pipes[i], address, n, { id ->
-                println("Got: $id")
                 if (id != last)
                     warn("Bad Sync: $id != $last")
 //                if (id == 0L) { error("Trying to erase!") }
