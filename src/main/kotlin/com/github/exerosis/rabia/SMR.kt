@@ -16,6 +16,8 @@ import kotlin.math.abs
 import kotlin.text.Charsets.UTF_8
 import kotlin.time.Duration.Companion.ZERO
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.DurationUnit
+import kotlin.time.DurationUnit.SECONDS
 import kotlin.time.ExperimentalTime
 import kotlin.time.TimeMark
 import kotlin.time.TimeSource.Monotonic.markNow
@@ -109,29 +111,28 @@ fun CoroutineScope.SMR(
         launch(CoroutineName("Pipe-$i") + dispatcher) { try {
             var last = -1L; var slot = i
             state.Node(pipes[i], address, n, { id ->
-                if (id != last)
-                    warn("Bad Sync: $id != $last")
-//                if (id == 0L) { error("Trying to erase!") }
+                var amount: Int; do { amount = count.get() }
+                while (amount >= 1000 && !count.compareAndSet(amount, 0))
+                if (amount >= 1000) {
+                    val duration = mark.get().elapsedNow()
+                    println("${amount / duration.toDouble(SECONDS)}/s")
+                }
+
                 if (id != last) {
+                    warn("Bad Sync: $id != $last")
                     offer(last)
-//                    if (depth > slot && id == 0L) repair(slot, depth)
+                    if (id != 0L) return@Node
+                    else repair(slot, slot)
                 } else {
                     log[slot % log.size] = id
-                    //Update the highest index that contains a value.
-//                    var current: Int; do { current = highest.get() }
-//                    while (current < slot && !highest.compareAndSet(current, slot))
-                    //Could potentially move slot forward by more than one increment
-                    using.remove(slot)
-                    slot += pipes.size
-                    //Will this be enough to keep the logs properly cleared?
-                    messages.remove(log[slot % log.size])
-                    log[slot % log.size] = 0L
-                    if (count.incrementAndGet() >= 1000) {
-                        val amount = count.getAndSet(0)
-                        println("$amount in ${mark.getAndSet(markNow()).elapsedNow()}")
-                    }
+                    messages.remove(id)
                 }
-                debug("Log: $log")
+
+//                var current: Int; do { current = highest.get() }
+//                while (current < slot && !highest.compareAndSet(current, slot))
+
+                slot += pipes.size
+                log[slot % log.size] = 0L
             }, {
                 debug("Size: $size")
 //                while (isActive && (slot - committed.get()) >= log.size) {}

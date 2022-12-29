@@ -52,17 +52,17 @@ suspend fun State.Node(
         info("Sent Proposal: $proposed - $current")
 
         while (indices[current] < majority) {
-            val index = indices[current]
             val from = proposes.receive(buffer.clear()).address
             val depth = buffer.getInt(0)
             if (depth < current) continue
             val proposal = buffer.getLong(4)
             info("Got Proposal: $proposal - $current $from")
-            proposals[index][depth] = proposal
-            ++indices[depth]
+            proposals[indices[depth]++][depth] = proposal
         }
         val proposal = proposals[0][current]
-        val all = (1 until majority).all { proposals[it][current] == proposal }
+        val all = (1 until majority).all {
+            proposals[it][current] == proposal
+        }
         indices[current] = 0
         var phase = 0
         var state = if (all) STATE_ONE else STATE_ZERO
@@ -115,17 +115,14 @@ suspend fun State.Node(
             votesOne[height] = 0
             votesLost[height] = 0
 
-            if (one >= f + 1) {
-//                if (!all) error("This should be -1")
-//                commit(if (all) proposal else -1)
-                commit(proposal)
-            } else if (zero >= f + 1) commit(-1) else {
+            if (one >= f + 1) commit(if (all) proposal else 0)
+            else if (zero >= f + 1) commit(-1) else {
                 ++phase
                 state = when {
                     one > 0 -> STATE_ONE
                     zero > 0 -> STATE_ZERO
                     else -> {
-//                        error("Rolling: $phase")
+                        println("Rolling: $phase")
                         if (Random(height).nextBoolean())
                             STATE_ZERO else STATE_ONE
                     }
