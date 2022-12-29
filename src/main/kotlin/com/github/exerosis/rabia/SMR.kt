@@ -13,6 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLongArray
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.math.abs
+import kotlin.math.roundToInt
 import kotlin.text.Charsets.UTF_8
 import kotlin.time.Duration.Companion.ZERO
 import kotlin.time.Duration.Companion.seconds
@@ -116,7 +117,8 @@ fun CoroutineScope.SMR(
                     amount = count.get()
                 if (amount >= 1000) {
                     val duration = mark.getAndSet(markNow()).elapsedNow()
-                    println("%,d/s".format(amount / duration.toDouble(SECONDS)))
+                    val throughput = amount / duration.toDouble(SECONDS)
+                    println("%,d/s".format(throughput.roundToInt()))
                 }
                 if (id != last) {
                     warn("Bad Sync: $id != $last")
