@@ -115,7 +115,7 @@ fun CoroutineScope.SMR(
                 while (amount >= 1000 && !count.compareAndSet(amount, 0))
                     amount = count.get()
                 if (amount >= 1000) {
-                    val duration = mark.get().elapsedNow()
+                    val duration = mark.getAndSet(markNow()).elapsedNow()
                     println("Duration: $duration")
                     println("${amount / duration.toDouble(SECONDS)}/s")
                 }
