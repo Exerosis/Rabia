@@ -112,7 +112,10 @@ fun CoroutineScope.SMR(
             var last = -1L; var slot = i
             state.Node(pipes[i], address, n, { id ->
                 if (id == COUNT.toLong()) error("Done!")
-                var amount: Int; do { amount = count.get() }
+                var amount: Int; do {
+                amount = count.get()
+                println(amount)
+                }
                 while (amount >= 1000 && !count.compareAndSet(amount, 0))
                 if (amount >= 1000) {
                     val duration = mark.get().elapsedNow()
