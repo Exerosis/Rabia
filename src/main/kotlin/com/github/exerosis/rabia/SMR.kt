@@ -121,7 +121,7 @@ fun CoroutineScope.SMR(
                     println("%,d/s".format(throughput.roundToInt()))
                 }
                 if (id != last) {
-                    warn("Bad Sync: $id != $last")
+                    debug("Bad Sync: $id != $last")
                     offer(last)
                     if (id != 0L) return@Node
                     else repair(slot, slot)
