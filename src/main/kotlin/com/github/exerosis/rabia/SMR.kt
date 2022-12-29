@@ -3,6 +3,7 @@ package com.github.exerosis.rabia
 import com.github.exerosis.mynt.SocketProvider
 import com.github.exerosis.mynt.bytes
 import kotlinx.coroutines.*
+import java.lang.management.ManagementFactory
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.nio.channels.AsynchronousChannelGroup
@@ -108,6 +109,7 @@ fun CoroutineScope.SMR(
     val mark = AtomicReference(markNow())
     val count = AtomicInteger(0)
     val state = State(log.size, (n / 2) + 1)
+    val bean = ManagementFactory.getOperatingSystemMXBean()
     instances.forEachIndexed { i, it -> it.apply {
         launch(CoroutineName("Pipe-$i") + dispatcher) { try {
             var last = -1L; var slot = i
@@ -118,7 +120,8 @@ fun CoroutineScope.SMR(
                 if (amount >= 1000) {
                     val duration = mark.getAndSet(markNow()).elapsedNow()
                     val throughput = amount / duration.toDouble(SECONDS)
-                    println("%,d/s".format(throughput.roundToInt()))
+                    val usage = bean.systemLoadAverage
+                    println("%,d - %.2f".format(throughput.roundToInt(), usage))
                 }
                 if (id != last) {
                     debug("Bad Sync: $id != $last")
