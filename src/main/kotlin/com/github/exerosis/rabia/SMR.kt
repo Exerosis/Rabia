@@ -116,8 +116,7 @@ fun CoroutineScope.SMR(
                     amount = count.get()
                 if (amount >= 1000) {
                     val duration = mark.getAndSet(markNow()).elapsedNow()
-                    println("Duration: $duration")
-                    println("${amount / duration.toDouble(SECONDS)}/s")
+                    println("%,.2f/s".format(amount / duration.toDouble(SECONDS)))
                 }
                 if (id != last) {
                     warn("Bad Sync: $id != $last")
