@@ -112,16 +112,13 @@ fun CoroutineScope.SMR(
             var last = -1L; var slot = i
             state.Node(pipes[i], address, n, { id ->
                 if (id == COUNT.toLong()) error("Done!")
-                var amount: Int; do {
-                amount = count.get()
-                println(amount)
-                }
+                var amount = count.incrementAndGet()
                 while (amount >= 1000 && !count.compareAndSet(amount, 0))
+                    amount = count.get()
                 if (amount >= 1000) {
                     val duration = mark.get().elapsedNow()
                     println("${amount / duration.toDouble(SECONDS)}/s")
                 }
-
                 if (id != last) {
                     warn("Bad Sync: $id != $last")
                     offer(last)
