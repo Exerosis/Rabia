@@ -110,7 +110,7 @@ fun CoroutineScope.SMR(
     instances.forEachIndexed { i, it -> it.apply {
         launch(CoroutineName("Pipe-$i") + dispatcher) { try {
             var last = -1L; var slot = i
-            state.Node(pipes[i], address, n, { id ->
+            Node(pipes[i], address, n, { id ->
                 if (id == COUNT.toLong()) error("Done!")
                 var amount = count.incrementAndGet()
                 while (amount >= 1000 && !count.compareAndSet(amount, 0))
