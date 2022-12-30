@@ -6,7 +6,7 @@ import kotlinx.coroutines.currentCoroutineContext
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
-val executor: ExecutorService = Executors.newCachedThreadPool()
+val executor: ExecutorService = Executors.newFixedThreadPool(16)
 val dispatcher = executor.asCoroutineDispatcher()
 
 suspend fun info(message: String) {
