@@ -11,14 +11,12 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentSkipListSet
 import java.util.concurrent.PriorityBlockingQueue
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.atomic.AtomicLongArray
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlin.text.Charsets.UTF_8
 import kotlin.time.Duration.Companion.ZERO
 import kotlin.time.Duration.Companion.seconds
-import kotlin.time.DurationUnit
 import kotlin.time.DurationUnit.SECONDS
 import kotlin.time.ExperimentalTime
 import kotlin.time.TimeMark
@@ -122,9 +120,15 @@ fun CoroutineScope.SMR(
                 if (amount >= AVERAGE) {
                     val duration = mark.getAndSet(markNow()).elapsedNow()
                     val throughput = amount / duration.toDouble(SECONDS)
-                    val usage = bean.cpuLoad
+                    val system = bean.cpuLoad
                     val process = bean.processCpuLoad
-                    println("%,d - %.2f vs %.2f".format(throughput.roundToInt(), usage, process))
+                    val average = bean.systemLoadAverage
+                    val time = bean.processCpuTime
+                    println("%,d".format(throughput.roundToInt()))
+                    println("System: $system")
+                    println("Process: $process")
+                    println("Average: $average")
+                    println("Time: $time")
                 }
                 if (id != last) {
                     debug("Bad Sync: $id != $last")
