@@ -109,7 +109,9 @@ fun CoroutineScope.SMR(
     val mark = AtomicReference(markNow())
     val count = AtomicInteger(0)
     val state = State(log.size, (n / 2) + 1)
-    val bean = ManagementFactory.getOperatingSystemMXBean()
+    val bean = ManagementFactory.getPlatformMXBean(
+        com.sun.management.OperatingSystemMXBean::class.java
+    )
     instances.forEachIndexed { i, it -> it.apply {
         launch(CoroutineName("Pipe-$i") + dispatcher) { try {
             var last = -1L; var slot = i
@@ -120,7 +122,7 @@ fun CoroutineScope.SMR(
                 if (amount >= AVERAGE) {
                     val duration = mark.getAndSet(markNow()).elapsedNow()
                     val throughput = amount / duration.toDouble(SECONDS)
-                    val usage = bean.systemLoadAverage
+                    val usage = bean.cpuLoad
                     println("%,d - %.2f".format(throughput.roundToInt(), usage))
                 }
                 if (id != last) {
