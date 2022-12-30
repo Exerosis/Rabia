@@ -2,10 +2,13 @@
 
 package com.github.exerosis.rabia
 
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.runBlocking
 import java.net.InetAddress
 import java.net.InetAddress.getByName
 import java.net.NetworkInterface
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 import kotlin.streams.asSequence
 import kotlin.time.ExperimentalTime
 
@@ -14,6 +17,9 @@ const val DEBUG = false
 const val WARN = true
 const val COUNT = 10_000_000
 const val AVERAGE = 10_000
+
+val executor = Executors.newFixedThreadPool(16)!!
+val dispatcher = executor.asCoroutineDispatcher()
 
 fun run() {
     runBlocking(dispatcher) {

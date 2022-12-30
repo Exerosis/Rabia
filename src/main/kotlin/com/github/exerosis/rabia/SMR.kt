@@ -154,13 +154,13 @@ fun CoroutineScope.SMR(
         }
     } }
 
-    launch { try {
-        while (isActive) {
-            delay(1.seconds)
-//            catchup()
-        }
-        println("No Longer Catching Up")
-    } catch (reason: Throwable) { reason.printStackTrace() } }
+//    launch { try {
+//        while (isActive) {
+//            delay(1.seconds)
+////            catchup()
+//        }
+//        println("No Longer Catching Up")
+//    } catch (reason: Throwable) { reason.printStackTrace() } }
 //    launch { try {
 //        val socket = InetSocketAddress(address, queue)
 //        while (provider.isOpen && isActive) {
