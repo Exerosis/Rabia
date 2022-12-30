@@ -115,9 +115,9 @@ fun CoroutineScope.SMR(
             var last = -1L; var slot = i
             state.Node(pipes[i], address, n, { id ->
                 var amount = count.incrementAndGet()
-                while (amount >= 1000 && !count.compareAndSet(amount, 0))
+                while (amount >= AVERAGE && !count.compareAndSet(amount, 0))
                     amount = count.get()
-                if (amount >= 1000) {
+                if (amount >= AVERAGE) {
                     val duration = mark.getAndSet(markNow()).elapsedNow()
                     val throughput = amount / duration.toDouble(SECONDS)
                     val usage = bean.systemLoadAverage
