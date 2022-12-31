@@ -144,8 +144,8 @@ fun CoroutineScope.SMR(
 //                while (isActive && (slot - committed.get()) >= log.size) {}
                 take().also<Long> { last = it }
             }, {
-                using.add(slot)
-                slot
+//                using.add(slot)
+                slot % log.size
             }, *nodes)
         } catch (reason: Throwable) {
             reason.printStackTrace()

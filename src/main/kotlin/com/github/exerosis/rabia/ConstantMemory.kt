@@ -46,7 +46,7 @@ suspend fun State.Node(
 
     outer@ while (proposes.isOpen) {
         val proposed = messages()
-        val current = slot() % 65536
+        val current = slot()
         val targetInstance = abs(proposed % 15).toInt()
         val slotInstance = current % 15
         println("TargetInstance: $targetInstance")
@@ -69,7 +69,12 @@ suspend fun State.Node(
         val all = (1 until majority).all {
             proposals[it][current] == proposal
         }
-        if (!all) println("What happened man??")
+        if (!all) {
+            (0 until majority).forEach {
+                println(proposals[it][current])
+            }
+            error("Very strange")
+        }
         indices[current] = 0
         var phase = 0
         var state = if (all) STATE_ONE else STATE_ZERO
