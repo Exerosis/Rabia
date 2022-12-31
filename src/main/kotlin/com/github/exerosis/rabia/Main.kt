@@ -18,7 +18,7 @@ const val WARN = true
 const val COUNT = 10_000_000
 const val AVERAGE = 10_000
 
-val executor = Executors.newFixedThreadPool(16)!!
+val executor = Executors.newCachedThreadPool()!!
 val dispatcher = executor.asCoroutineDispatcher()
 
 fun run() {
