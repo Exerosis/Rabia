@@ -123,12 +123,8 @@ fun CoroutineScope.SMR(
                     val system = bean.cpuLoad
                     val process = bean.processCpuLoad
                     val average = bean.systemLoadAverage
-                    val time = bean.processCpuTime
                     println("%,d".format(throughput.roundToInt()))
-                    println("System: $system")
-                    println("Process: $process")
-                    println("Average: $average")
-                    println("Time: $time")
+                    println("s: $system p: $process a: $average")
                 }
                 if (id != last) {
                     debug("Bad Sync: $id != $last")
