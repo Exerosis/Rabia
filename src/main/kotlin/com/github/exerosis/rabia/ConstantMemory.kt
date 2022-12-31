@@ -49,8 +49,8 @@ suspend fun State.Node(
         val current = slot() % 65536
         val targetInstance = abs(proposed % 15).toInt()
         val slotInstance = current % 15
-        if (targetInstance != slotInstance)
-            error("This message shouldn't be here I don't think!")
+        println("targetInstance = ${targetInstance}")
+        println("slotInstance = ${slotInstance}")
 
         buffer.clear().putInt(current).putLong(proposed)
         proposes.send(buffer.flip())
