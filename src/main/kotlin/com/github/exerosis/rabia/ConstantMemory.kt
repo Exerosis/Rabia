@@ -3,6 +3,7 @@ package com.github.exerosis.rabia
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer.allocateDirect
+import kotlin.math.abs
 import kotlin.random.Random
 
 const val STATE_ZERO = 0.toByte()
@@ -46,6 +47,10 @@ suspend fun State.Node(
     outer@ while (proposes.isOpen) {
         val proposed = messages()
         val current = slot() % 65536
+        val targetInstance = abs(proposed % 15).toInt()
+        val slotInstance = current % 15
+        if (targetInstance != slotInstance)
+            error("This message shouldn't be here I don't think!")
 
         buffer.clear().putInt(current).putLong(proposed)
         proposes.send(buffer.flip())
