@@ -49,8 +49,8 @@ suspend fun State.Node(
         val current = slot()
         val targetInstance = abs(proposed % 15).toInt()
         val slotInstance = current % 15
-        println("TargetInstance: $targetInstance")
-        println("SlotInstance: $slotInstance")
+//        println("TargetInstance: $targetInstance")
+//        println("SlotInstance: $slotInstance")
 
         buffer.clear().putInt(current).putLong(proposed)
         proposes.send(buffer.flip())
