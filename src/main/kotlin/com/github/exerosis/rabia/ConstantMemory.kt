@@ -64,6 +64,7 @@ suspend fun State.Node(
         val all = (1 until majority).all {
             proposals[it][current] == proposal
         }
+        if (!all) println("What happened man??")
         indices[current] = 0
         var phase = 0
         var state = if (all) STATE_ONE else STATE_ZERO
