@@ -16,7 +16,7 @@ const val INFO = false
 const val DEBUG = false
 const val WARN = true
 const val COUNT = 10_000_000
-const val AVERAGE = 1000
+const val AVERAGE = 10_000
 
 val executor: ThreadPoolExecutor = Executors.newCachedThreadPool() as ThreadPoolExecutor
 val dispatcher = executor.asCoroutineDispatcher()
