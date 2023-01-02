@@ -12,7 +12,7 @@ import java.util.concurrent.Executors
 import kotlin.streams.asSequence
 import kotlin.time.ExperimentalTime
 
-const val INFO = false
+const val INFO = true
 const val DEBUG = false
 const val WARN = true
 const val COUNT = 10_000_000
