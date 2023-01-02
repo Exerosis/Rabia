@@ -78,8 +78,9 @@ suspend fun State.Node(
         var phase = 0
         var state = if (all) STATE_ONE else STATE_ZERO
         while (phase < 64) { //if we want to pack op and phase into the same place.
-            val height = (index shl 8 or phase) % phases
-            buffer.clear().putInt(index shl 8 or phase).put(state)
+            val high = index shl 8 or phase
+            val height = high % phases
+            buffer.clear().putInt(high).put(state)
             states.send(buffer.flip())
             info("Sent State: $state - $current")
             while (statesZero[height] + statesOne[height] < majority) {
@@ -102,7 +103,7 @@ suspend fun State.Node(
             statesZero[height] = 0
             statesOne[height] = 0
 
-            buffer.clear().putInt(height).put(vote)
+            buffer.clear().putInt(high).put(vote)
             votes.send(buffer.flip())
             info("Sent Vote: $vote - $current")
             //TODO can we reduce the amount we wait for here.
