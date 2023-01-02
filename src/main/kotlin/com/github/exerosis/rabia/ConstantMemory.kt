@@ -78,7 +78,7 @@ suspend fun State.Node(
         var phase = 0
         var state = if (all) STATE_ONE else STATE_ZERO
         while (phase < 64) { //if we want to pack op and phase into the same place.
-            val high = index shl 8 or phase
+            val high = current shl 8 or phase
             val height = high % phases
             buffer.clear().putInt(high).put(state)
             states.send(buffer.flip())
