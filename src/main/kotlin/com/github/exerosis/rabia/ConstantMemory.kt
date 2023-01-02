@@ -3,7 +3,6 @@ package com.github.exerosis.rabia
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer.allocateDirect
-import kotlin.math.abs
 import kotlin.random.Random
 
 const val STATE_ZERO = 0.toByte()
@@ -43,45 +42,44 @@ suspend fun State.Node(
         InetSocketAddress(it, port + 2)
     }.toTypedArray())
     val buffer = allocateDirect(12)
+    val phases = 65536 * 256
 
     outer@ while (proposes.isOpen) {
         val proposed = messages()
         val current = slot()
-        val targetInstance = abs(proposed % 15).toInt()
-        val slotInstance = current % 15
-//        println("TargetInstance: $targetInstance")
-//        println("SlotInstance: $slotInstance")
+        val index = current % 65536
 
         buffer.clear().putInt(current).putLong(proposed)
         proposes.send(buffer.flip())
         info("Sent Proposal: $proposed - $current")
 
-        while (indices[current] < majority) {
+        while (indices[index] < majority) {
             val from = proposes.receive(buffer.clear()).address
             val depth = buffer.getInt(0)
             if (depth < current) continue
             val proposal = buffer.getLong(4)
             info("Got Proposal: $proposal - $current $from")
-            if (indices[depth] < majority)
-                proposals[indices[depth]++][depth] = proposal
+            val i = depth % 65536
+            if (indices[i] < majority)
+                proposals[indices[i]++][i] = proposal
         }
-        val proposal = proposals[0][current]
+        val proposal = proposals[0][index]
         val all = (1 until majority).all {
-            proposals[it][current] == proposal
+            proposals[it][index] == proposal
         }
         if (!all) {
             println("Current: $current")
             (0 until majority).forEach {
-                println(proposals[it][current])
+                println(proposals[it][index])
             }
             error("Very strange")
         }
-        indices[current] = 0
+        indices[index] = 0
         var phase = 0
         var state = if (all) STATE_ONE else STATE_ZERO
         while (phase < 64) { //if we want to pack op and phase into the same place.
-            val height = current shl 8 or phase
-            buffer.clear().putInt(height).put(state)
+            val height = (index shl 8 or phase) % phases
+            buffer.clear().putInt(index shl 8 or phase).put(state)
             states.send(buffer.flip())
             info("Sent State: $state - $current")
             while (statesZero[height] + statesOne[height] < majority) {
@@ -91,8 +89,8 @@ suspend fun State.Node(
                 val op = buffer.get(4)
                 info("Got State (${statesZero[height] + statesOne[height] + 1}/$majority): $op - $current $from")
                 when (op) {
-                    STATE_ONE -> ++statesOne[depth]
-                    STATE_ZERO -> ++statesZero[depth]
+                    STATE_ONE -> ++statesOne[depth % phases]
+                    STATE_ZERO -> ++statesZero[depth % phases]
                     else -> error("Invalid state!")
                 }
             }
@@ -115,9 +113,9 @@ suspend fun State.Node(
                 val op = buffer.get(4)
                 info("Got Vote (${votesZero[height] + votesOne[height] + votesLost[height] + 1}/$majority): $op - $current $from")
                 when (op) {
-                    VOTE_ZERO -> ++votesZero[depth]
-                    VOTE_ONE -> ++votesOne[depth]
-                    VOTE_LOST -> ++votesLost[depth]
+                    VOTE_ZERO -> ++votesZero[depth % phases]
+                    VOTE_ONE -> ++votesOne[depth % phases]
+                    VOTE_LOST -> ++votesLost[depth % phases]
                     else -> error("Invalid vote!")
                 }
             }
