@@ -8,6 +8,7 @@ import java.net.InetAddress
 import java.net.InetAddress.getByName
 import java.net.NetworkInterface
 import java.util.concurrent.Executors
+import java.util.concurrent.ThreadPoolExecutor
 import kotlin.streams.asSequence
 import kotlin.time.ExperimentalTime
 
@@ -17,7 +18,7 @@ const val WARN = true
 const val COUNT = 10_000_000
 const val AVERAGE = 1000
 
-val executor = Executors.newCachedThreadPool()
+val executor: ThreadPoolExecutor = Executors.newCachedThreadPool() as ThreadPoolExecutor
 val dispatcher = executor.asCoroutineDispatcher()
 
 fun run() {
@@ -39,7 +40,7 @@ fun run() {
 
         SMR(3, address, nodes,
             queue=2000, repair=2001,
-            pipes=IntArray(10) { 3000 + (it * 100) }
+            pipes=IntArray(25) { 3000 + (it * 100) }
         ) {
 //            println("${index++}: $it")
         }
