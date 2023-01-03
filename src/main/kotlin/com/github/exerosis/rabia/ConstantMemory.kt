@@ -42,7 +42,7 @@ suspend fun State.Node(
     val votes = TCP(address, port + 2, 65527 * 5, *nodes.map {
         InetSocketAddress(it, port + 2)
     }.toTypedArray())
-    val buffer = allocateDirect(12)
+    val buffer = allocateDirect(10)
     val half = logs / 2
 
     outer@ while (proposes.isOpen) {
