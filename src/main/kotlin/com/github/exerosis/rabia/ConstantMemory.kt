@@ -25,6 +25,9 @@ class State(val logs: Int, val n: Int) {
     val votesLost = ByteArray(logs * 256)
 }
 
+inline fun out(a: Int, b: Int, half: Int) =
+    a < b && (a - b) > half || b > a && (b - a) > half
+
 suspend fun State.Node(
     port: Int, address: InetAddress, n: Int,
     commit: suspend (Long) -> (Unit),
@@ -57,7 +60,7 @@ suspend fun State.Node(
             val from = proposes.receive(buffer.clear()).address
             val depth = buffer.getShort(0).toInt() and 0xFFFF
 //            println("Current: $current Depth: $depth")
-            if (depth < current && (current - depth) < half) continue
+            if (out(depth, current, half)) continue
             val proposal = buffer.getLong(2)
             info("Got Proposal: $proposal - $current $from")
             if (indices[depth] < majority)
@@ -85,9 +88,9 @@ suspend fun State.Node(
             while (statesZero[height] + statesOne[height] < majority) {
                 val from = states.receive(buffer.clear().limit(4)).address
                 val depth = buffer.getShort(0).toInt() and 0xFFFF
-                if (depth < current && (current - depth) < half) continue
+                if (out(depth, current, half)) continue
                 val round = buffer.get(2).toInt() and 0xFF
-                if (round < phase && (phase - round) < 128) continue
+                if (out(round, phase, 128)) continue
                 val op = buffer.get(3)
                 info("Got State (${statesZero[height] + statesOne[height] + 1}/$majority): $op - $current $from")
                 when (op) {
@@ -111,9 +114,9 @@ suspend fun State.Node(
             while (votesZero[height] + votesOne[height] + votesLost[height] < majority) {
                 val from = votes.receive(buffer.clear().limit(4)).address
                 val depth = buffer.getShort(0).toInt() and 0xFFFF
-                if (depth < current && (current - depth) < half) continue
+                if (out(depth, current, half)) continue
                 val round = buffer.get(2).toInt() and 0xFF
-                if (round < phase && (phase - round) < 128) continue
+                if (out(round, phase, 128)) continue
                 val op = buffer.get(3)
                 info("Got Vote (${votesZero[height] + votesOne[height] + votesLost[height] + 1}/$majority): $op - $current $from")
                 when (op) {
