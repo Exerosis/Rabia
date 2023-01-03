@@ -82,7 +82,7 @@ suspend fun State.Node(
             states.send(buffer.flip())
             info("Sent State: $state - $current")
             while (statesZero[height] + statesOne[height] < majority) {
-                val from = states.receive(buffer.clear().limit(5)).address
+                val from = states.receive(buffer.clear().limit(4)).address
                 val depth = buffer.getShort(0).toInt() and 0xFFFF
                 if (depth < current && (current - depth) < half) continue
                 val round = buffer.get(2).toInt() and 0xFF
@@ -108,7 +108,7 @@ suspend fun State.Node(
             info("Sent Vote: $vote - $current")
             //TODO can we reduce the amount we wait for here.
             while (votesZero[height] + votesOne[height] + votesLost[height] < majority) {
-                val from = votes.receive(buffer.clear().limit(5)).address
+                val from = votes.receive(buffer.clear().limit(4)).address
                 val depth = buffer.getShort(0).toInt() and 0xFFFF
                 if (depth < current && (current - depth) < half) continue
                 val round = buffer.get(2).toInt() and 0xFF
