@@ -75,9 +75,9 @@ suspend fun State.Node(
             proposals[it][current] == proposal
         }
         if (!all) {
-            println("Current: $current")
+            info("Current: $current")
             (0 until majority).forEach {
-                println(proposals[it][current])
+                info("${proposals[it][current]}")
             }
             error("Very strange")
         }
