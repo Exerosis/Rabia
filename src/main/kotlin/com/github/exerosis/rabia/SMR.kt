@@ -106,7 +106,7 @@ fun CoroutineScope.SMR(
     }
     val mark = AtomicReference(markNow())
     val count = AtomicInteger(0)
-    val state = State(log.size, (n / 2) + 1)
+    val state = State(log.size, n)
     val bean = ManagementFactory.getPlatformMXBean(
         com.sun.management.OperatingSystemMXBean::class.java
     )
