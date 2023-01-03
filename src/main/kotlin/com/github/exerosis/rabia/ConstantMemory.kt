@@ -26,7 +26,7 @@ class State(val logs: Int, val n: Int) {
 }
 
 inline fun out(a: Int, b: Int, half: Int) =
-    a < b && (a - b) > half || b > a && (b - a) > half
+    a < b && (a - b) < half || b > a && (b - a) > half
 
 suspend fun State.Node(
     port: Int, address: InetAddress, n: Int,
@@ -59,7 +59,6 @@ suspend fun State.Node(
         while (indices[current] < majority) {
             val from = proposes.receive(buffer.clear()).address
             val depth = buffer.getShort(0).toInt() and 0xFFFF
-//            println("Current: $current Depth: $depth")
             if (out(depth, current, half)) continue
             val proposal = buffer.getLong(2)
             info("Got Proposal: $proposal - $current $from")
