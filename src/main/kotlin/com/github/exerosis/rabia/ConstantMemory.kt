@@ -25,8 +25,10 @@ class State(val logs: Int, val n: Int) {
     val votesLost = ByteArray(logs * 256)
 }
 
+//if depth is less than current but not by a huge amount then it's old
+//if depth is greater than current by a huge amount then it's old
 inline fun out(a: Int, b: Int, half: Int) =
-    a < b && (a - b) < half || b > a && (b - a) > half
+    a < b && (b - a) < half || a > b && (a - b) > half
 
 suspend fun State.Node(
     port: Int, address: InetAddress, n: Int,
@@ -59,13 +61,16 @@ suspend fun State.Node(
         while (indices[current] < majority) {
             val from = proposes.receive(buffer.clear()).address
             val depth = buffer.getShort(0).toInt() and 0xFFFF
+//            println("Depth: $depth Current: $current - ${out(depth, current, half)}")
             if (out(depth, current, half)) continue
             val proposal = buffer.getLong(2)
+
             info("Got Proposal: $proposal - $current $from")
             if (indices[depth] < majority)
                 proposals[indices[depth]++][depth] = proposal
         }
         val proposal = proposals[0][current]
+//        if (proposal == 65535L) error("Done here for now")
         val all = (1 until majority).all {
             proposals[it][current] == proposal
         }
