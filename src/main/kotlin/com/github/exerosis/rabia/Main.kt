@@ -7,8 +7,10 @@ import kotlinx.coroutines.runBlocking
 import java.net.InetAddress
 import java.net.InetAddress.getByName
 import java.net.NetworkInterface
+import java.nio.ByteBuffer
 import java.util.concurrent.Executors
 import java.util.concurrent.ThreadPoolExecutor
+import kotlin.experimental.and
 import kotlin.streams.asSequence
 import kotlin.time.ExperimentalTime
 
@@ -47,4 +49,18 @@ fun run() {
     }
     println("Exited Run")
 }
-fun main() = run()
+fun main() {
+    val buffer = ByteBuffer.allocate(10)
+    for (i in 0..(65536 * 3)) {
+        val index = i % 65536
+        buffer.clear().putShort(index.toShort())
+        val test = buffer.clear().getShort()
+        val resolved = test.toInt() and 0xffff
+        if (resolved != index)
+            error("not right")
+//        if (test != index)
+//            error("problem")
+//        else println(test)
+    }
+
+}
