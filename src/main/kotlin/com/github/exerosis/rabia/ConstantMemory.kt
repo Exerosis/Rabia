@@ -113,7 +113,7 @@ suspend fun State.Node(
                 if (depth < current && (current - depth) < half) continue
                 val round = buffer.get(2).toInt() and 0xFF
                 if (round < phase && (phase - round) < 128) continue
-                val op = buffer.get(2)
+                val op = buffer.get(3)
                 info("Got Vote (${votesZero[height] + votesOne[height] + votesLost[height] + 1}/$majority): $op - $current $from")
                 when (op) {
                     VOTE_ZERO -> ++votesZero[depth shl 8 or round]
