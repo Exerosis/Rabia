@@ -14,7 +14,7 @@ import kotlin.experimental.and
 import kotlin.streams.asSequence
 import kotlin.time.ExperimentalTime
 
-const val INFO = true
+const val INFO = false
 const val DEBUG = false
 const val WARN = true
 const val COUNT = 10_000_000
