@@ -49,18 +49,4 @@ fun run() {
     }
     println("Exited Run")
 }
-fun main() {
-    val buffer = ByteBuffer.allocate(10)
-    for (i in 0..(65536 * 3)) {
-        val index = i % 65536
-        buffer.clear().putShort(index.toShort())
-        val test = buffer.clear().getShort()
-        val resolved = test.toInt() and 0xffff
-        if (resolved != index)
-            error("not right")
-//        if (test != index)
-//            error("problem")
-//        else println(test)
-    }
-
-}
+fun main() = run()
