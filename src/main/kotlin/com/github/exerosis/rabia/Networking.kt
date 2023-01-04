@@ -1,17 +1,18 @@
 package com.github.exerosis.rabia
 
-import com.github.exerosis.mynt.SocketProvider
-import com.github.exerosis.mynt.base.Connection
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.runBlocking
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.NetworkInterface.getByInetAddress
 import java.net.StandardProtocolFamily.INET
 import java.net.StandardSocketOptions.*
 import java.nio.ByteBuffer
-import java.nio.channels.*
+import java.nio.channels.AsynchronousServerSocketChannel
+import java.nio.channels.AsynchronousSocketChannel
 import java.nio.channels.CompletionHandler
-import java.util.concurrent.ConcurrentLinkedQueue
+import java.nio.channels.DatagramChannel
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
@@ -55,131 +56,11 @@ fun UDP(
     }
 }
 
-suspend fun TCPN(
-    address: InetAddress,
-    port: Int, size: Int,
-    vararg addresses: InetSocketAddress
-): Multicaster {
-    val server = ServerSocketChannel.open()
-    server.configureBlocking(false)
-    server.bind(InetSocketAddress(address, port))
-    val scope = CoroutineScope(dispatcher)
-    val outbound = ConcurrentLinkedQueue<SocketChannel>()
-    val inbound = ConcurrentLinkedQueue<SocketChannel>()
-    scope.launch {
-        while (server.isOpen && isActive)
-            server.accept()?.apply {
-                configureBlocking(false)
-                setOption(SO_SNDBUF, size)
-                setOption(SO_RCVBUF, size)
-                setOption(TCP_NODELAY, true)
-//                setOption(TCP_QUICKACK, true)
-                inbound.add(this)
-            }
-    }
-    addresses.map {
-        scope.async { while (true) try {
-            return@async outbound.add(SocketChannel.open(it).apply {
-                configureBlocking(false)
-                setOption(SO_SNDBUF, size)
-                setOption(SO_RCVBUF, size)
-                setOption(TCP_NODELAY, true)
-//            setOption(TCP_QUICKACK, true)
-            })
-        } catch (_: Throwable) {}}
-    }.forEach { it.await() }
-    return object : Multicaster {
-        override val isOpen = server.isOpen
-        override fun close() = runBlocking { scope.cancel(); server.close() }
-        override suspend fun send(buffer: ByteBuffer) {
-//            withContext(Dispatchers.IO) {
-                outbound.map {
-                    val copy = buffer.duplicate()
-                    scope.async {
-                        try {
-                            while (copy.hasRemaining()) {
-                                it.write(copy)
-                                Thread.onSpinWait()
-                            }
-                        } catch (reason: Throwable) {
-                            reason.printStackTrace()
-                        }
-                    }
-                }.awaitAll()
-//            }
-        }
-        override suspend fun receive(buffer: ByteBuffer): InetSocketAddress {
-            //TODO Switch to round robin
-            while (true) {
-                inbound.shuffled().forEach {
-                    if (it.read(buffer) != 0) {
-                        while (buffer.hasRemaining()) {
-                            it.read(buffer)
-                            Thread.onSpinWait()
-                        }
-                        return it.remoteAddress as InetSocketAddress
-                    }
-                }
-                Thread.onSpinWait()
-            }
-        }
-    }
-}
-
-suspend fun TCPB(
-    address: InetAddress,
-    port: Int, size: Int,
-    vararg addresses: InetSocketAddress
-): Multicaster {
-    val server = ServerSocketChannel.open()
-    server.bind(InetSocketAddress(address, port))
-    val scope = CoroutineScope(dispatcher)
-    val outbound = CopyOnWriteArrayList<SocketChannel>()
-    val inbound = CopyOnWriteArrayList<SocketChannel>()
-    scope.launch {
-        while (server.isOpen && isActive)
-            server.accept()?.apply {
-                setOption(SO_SNDBUF, size)
-                setOption(SO_RCVBUF, size)
-                setOption(TCP_NODELAY, true)
-                inbound.add(this)
-            }
-    }
-    addresses.map {
-        scope.async { while (true) try {
-            return@async outbound.add(SocketChannel.open(it).apply {
-                setOption(SO_SNDBUF, size)
-                setOption(SO_RCVBUF, size)
-                setOption(TCP_NODELAY, true)
-            })
-        } catch (_: Throwable) {}}
-    }.forEach { it.await() }
-    return object : Multicaster {
-        override val isOpen = server.isOpen
-        override fun close() = runBlocking { scope.cancel(); server.close() }
-        override suspend fun send(buffer: ByteBuffer) {
-            outbound.map {
-                val copy = buffer.duplicate()
-                scope.async { it.write(copy) }
-            }.awaitAll()
-        }
-        var i = 0
-        override suspend fun receive(buffer: ByteBuffer): InetSocketAddress {
-            val socket = inbound[i++ % inbound.size]
-            socket.read(buffer)
-            return socket.remoteAddress as InetSocketAddress
-        }
-    }
-}
-
-
-
 suspend fun TCP(
     address: InetAddress,
     port: Int, size: Int,
     vararg addresses: InetSocketAddress
 ): Multicaster {
-//    val group = AsynchronousChannelGroup.withThreadPool(executor)
     val server = AsynchronousServerSocketChannel.open(group)
     server.bind(InetSocketAddress(address, port))
     val scope = CoroutineScope(dispatcher)
@@ -275,48 +156,5 @@ suspend fun TCP(
                 handler.socket.read(buffer, buffer, handler)
                 COROUTINE_SUSPENDED
             }
-    }
-}
-
-suspend fun TCPM(
-    address: InetAddress,
-    port: Int, size: Int,
-    vararg addresses: InetSocketAddress
-): Multicaster {
-    val group = AsynchronousChannelGroup.withThreadPool(executor)
-    val provider = SocketProvider(0, group) {
-        it.setOption(SO_SNDBUF, size)
-        it.setOption(SO_RCVBUF, size)
-        it.setOption(TCP_NODELAY, true)
-    }
-    val scope = CoroutineScope(dispatcher)
-    val inbound = CopyOnWriteArrayList<Connection>()
-    val outbound = addresses.map {
-        while (true) try {
-            provider.connect(it)
-        } catch (_: Throwable) {}
-        provider.connect(it)
-    }
-    println("Connected to others!")
-    scope.launch {
-        while (provider.isOpen && isActive)
-            inbound.add(provider.accept(InetSocketAddress(address, port)))
-    }
-    return object : Multicaster {
-        override val isOpen = provider.isOpen
-        override fun close() = runBlocking { scope.cancel(); provider.close() }
-
-        override suspend fun send(buffer: ByteBuffer) {
-            outbound.map { scope.async {
-                it.write.buffer(buffer.duplicate())
-            } }.awaitAll()
-        }
-
-        var i = 0
-        override suspend fun receive(buffer: ByteBuffer): InetSocketAddress {
-            val connection = inbound[i++ % inbound.size]
-            connection.read.buffer(buffer)
-            return connection.address
-        }
     }
 }
