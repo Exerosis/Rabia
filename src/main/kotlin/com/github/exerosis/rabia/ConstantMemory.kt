@@ -50,7 +50,7 @@ suspend fun State.Node(
     }.toTypedArray())
     val buffer = allocateDirect(10)
     val half = logs / 2
-
+    var test = 0
     outer@ while (proposes.isOpen) {
         val proposed = messages()
         val realSlot = slot()
@@ -66,7 +66,10 @@ suspend fun State.Node(
             val from = proposes.receive(buffer.clear()).address
             val depth = buffer.getShort(0).toInt() and 0xFFFF
 //            warn("Depth: $depth Current: $current")
-            if (depth % 15 != i) warn("Got a message from the wrong guy!")
+            if (depth % 15 != i) {
+                if (test++ % 10000 == 0)
+                    warn("Got a message from the wrong guy!")
+            }
 //            println("Depth: $depth Current: $current - ${out(depth, current, half)}")
             if (isOld(depth, current, half)) continue
             val proposal = buffer.getLong(2)
