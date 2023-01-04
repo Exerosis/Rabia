@@ -41,7 +41,7 @@ fun run() {
 
         SMR(3, address, nodes,
             queue=2000, repair=2001,
-            pipes=IntArray(256) { 3000 + (it * 10) }
+            pipes=IntArray(512) { 3000 + (it * 10) }
         ) {
 //            println("${index++}: $it")
         }
