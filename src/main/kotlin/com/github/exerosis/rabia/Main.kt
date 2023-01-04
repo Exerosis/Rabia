@@ -7,6 +7,7 @@ import kotlinx.coroutines.runBlocking
 import java.net.InetAddress
 import java.net.InetAddress.getByName
 import java.net.NetworkInterface
+import java.nio.channels.AsynchronousChannelGroup
 import java.util.concurrent.Executors
 import java.util.concurrent.ThreadPoolExecutor
 import kotlin.streams.asSequence
@@ -20,7 +21,7 @@ const val AVERAGE = 10_000
 
 val executor = Executors.newFixedThreadPool(16) as ThreadPoolExecutor
 val dispatcher = executor.asCoroutineDispatcher()
-
+val group = AsynchronousChannelGroup.withThreadPool(executor)
 fun run() {
     runBlocking(dispatcher) {
         val hostname = InetAddress.getLocalHost().hostName.split('.')[0]
