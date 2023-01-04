@@ -38,7 +38,7 @@ suspend fun State.Node(
     slot: suspend () -> (Int),
     vararg nodes: InetAddress
 ) {
-    info("N: $n F: $f Majority: $majority")
+    info("I: $i N: $n F: $f Majority: $majority")
     val proposes = TCP(address, port, 65527 * 5, *nodes.map {
         InetSocketAddress(it, port)
     }.toTypedArray())
@@ -55,7 +55,7 @@ suspend fun State.Node(
         val proposed = messages()
         val realSlot = slot()
         val current = realSlot % logs
-        if (realSlot % 7 != i)
+        if (realSlot % 15 != i)
             error("On the wrong slot")
 
         buffer.clear().putShort(current.toShort()).putLong(proposed)

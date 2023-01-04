@@ -40,7 +40,9 @@ fun run() {
 
         //1 - 4000
         //2 - 8000
+        //3 - 13_000 (1)
         //4 - 20_000
+        //7 -
         //8 - 36_000 (4) 19_000 (with 32 fixed)
         //14 - 61_000 - 50_000
         //15 - dies (2)
@@ -48,7 +50,7 @@ fun run() {
         //17 - dies (1)
         SMR(3, address, nodes,
             queue=2000, repair=2001,
-            pipes=IntArray(7) { 3000 + (it * 100) }
+            pipes=IntArray(15) { 3000 + (it * 100) }
         ) {
 //            println("${index++}: $it")
         }
