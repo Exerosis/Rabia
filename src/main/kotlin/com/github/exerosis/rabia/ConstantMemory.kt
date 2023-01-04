@@ -31,6 +31,7 @@ inline fun isOld(a: Int, b: Int, half: Int) =
     a < b && (b - a) < half || a > b && (a - b) > half
 
 suspend fun State.Node(
+    i: Int,
     port: Int, address: InetAddress, n: Int,
     commit: suspend (Long) -> (Unit),
     messages: suspend () -> (Long),
@@ -52,7 +53,10 @@ suspend fun State.Node(
 
     outer@ while (proposes.isOpen) {
         val proposed = messages()
-        val current = slot() % logs
+        val realSlot = slot()
+        val current = realSlot % logs
+        if (realSlot % i != 0)
+            error("On the wrong slot")
 
         buffer.clear().putShort(current.toShort()).putLong(proposed)
         proposes.send(buffer.flip())

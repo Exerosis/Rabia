@@ -63,7 +63,7 @@ fun CoroutineScope.SMR(
         messages[id] = ""
         instances[abs(id % instances.size).toInt()].offer(id)
     }
-    instances.forEach { println(it.size) }
+//    instances.forEach { println(it.size) }
 
     suspend fun repair(start: Int, end: Int) {
         warn("Repair: $start - $end")
@@ -114,7 +114,7 @@ fun CoroutineScope.SMR(
     instances.forEachIndexed { i, it -> it.apply {
         launch(CoroutineName("Pipe-$i") + dispatcher) { try {
             var last = -1L; var slot = i
-            state.Node(pipes[i], address, n, { id ->
+            state.Node(i, pipes[i], address, n, { id ->
                 if (isEmpty()) println("Done!")
                 //TODO look into summing from a stats thread
                 var amount = count.incrementAndGet()
