@@ -176,22 +176,22 @@ fun CoroutineScope.SMR(
 //        }
 //        println("No Longer Accepting Messages")
 //    } catch (reason: Throwable) { reason.printStackTrace() } }
-    launch { try {
-        val socket = InetSocketAddress(address, repair)
-        while (provider.isOpen) {
-            provider.accept(socket).apply { launch {
-                val start = read.int()
-                val end = read.int()
-                for (i in start..end) {
-                    val id = log[i % log.size]
-                    write.long(id)
-                    val message = messages[id].orEmpty()
-                    val bytes = message.toByteArray(UTF_8)
-                    write.short(bytes.size.toShort())
-                    write.bytes(bytes)
-                }
-            } }
-        }
-        println("No Longer Avaliable For Repair")
-    } catch (reason: Throwable) { reason.printStackTrace()} }
+//    launch { try {
+//        val socket = InetSocketAddress(address, repair)
+//        while (provider.isOpen) {
+//            provider.accept(socket).apply { launch {
+//                val start = read.int()
+//                val end = read.int()
+//                for (i in start..end) {
+//                    val id = log[i % log.size]
+//                    write.long(id)
+//                    val message = messages[id].orEmpty()
+//                    val bytes = message.toByteArray(UTF_8)
+//                    write.short(bytes.size.toShort())
+//                    write.bytes(bytes)
+//                }
+//            } }
+//        }
+//        println("No Longer Avaliable For Repair")
+//    } catch (reason: Throwable) { reason.printStackTrace()} }
 }
