@@ -55,6 +55,8 @@ suspend fun State.Node(
         val proposed = messages()
         val realSlot = slot()
         val current = realSlot % logs
+        if (current % 15 != i)
+            error("Before conversion")
         val whatISend = current.toShort()
         if ((whatISend.toInt() and 0xFFFF) % 15 != i)
             error("On the wrong slot")
