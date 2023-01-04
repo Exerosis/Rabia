@@ -50,6 +50,7 @@ fun run() {
         //17 - dies (1)
         //18 - dies (1)
         //20 - dies (1)
+        //24 - dies (3)
         //32 - 60_000 (2)
         SMR(3, address, nodes,
             queue=2000, repair=2001,
