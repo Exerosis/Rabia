@@ -61,7 +61,7 @@ suspend fun State.Node(
 
         while (indices[current] < majority) {
             val from = proposes.receive(buffer.clear()).address
-            val depth = buffer.getInt()
+            val depth = buffer.getInt(0)
 //            warn("Depth: $depth Current: $current")
 //            println("Depth: $depth Current: $current - ${out(depth, current, half)}")
             if (isOld(depth, current, half)) continue
