@@ -62,8 +62,6 @@ suspend fun State.Node(
         while (indices[current] < majority) {
             val from = proposes.receive(buffer.clear()).address
             val depth = buffer.getShort(0).toInt() and 0xFFFF
-//            warn("Depth: $depth Current: $current")
-//            println("Depth: $depth Current: $current - ${out(depth, current, half)}")
             if (isOld(depth, current, half)) continue
             val proposal = buffer.getLong(2)
 
