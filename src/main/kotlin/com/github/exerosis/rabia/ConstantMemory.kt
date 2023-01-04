@@ -65,7 +65,7 @@ suspend fun State.Node(
         while (indices[current] < majority) {
             val from = proposes.receive(buffer.clear()).address
             val depth = buffer.getShort(0).toInt() and 0xFFFF
-            warn("Depth: $depth Current: $current")
+//            warn("Depth: $depth Current: $current")
             if (depth % 15 != i) warn("Got a message from the wrong guy!")
 //            println("Depth: $depth Current: $current - ${out(depth, current, half)}")
             if (isOld(depth, current, half)) continue
