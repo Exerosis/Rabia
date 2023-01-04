@@ -17,9 +17,9 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.intrinsics.COROUTINE_SUSPENDED
+import kotlin.coroutines.intrinsics.suspendCoroutineUninterceptedOrReturn
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
-import kotlin.coroutines.suspendCoroutine
 
 const val BROADCAST = "230.0.0.0" //230
 
@@ -250,12 +250,14 @@ suspend fun TCP(
             })); return@forEach
         } catch (_: Throwable) {}
     }
+
+//    println("Connected to: ${outbound.size}")
     return object : Multicaster {
         override val isOpen = server.isOpen
         override fun close() = runBlocking { scope.cancel(); server.close() }
 
         override suspend fun send(buffer: ByteBuffer) =
-            suspendCoroutine { next ->
+            suspendCoroutineUninterceptedOrReturn { next ->
                 remaining.set(outbound.size)
                 outboundContinuation.set(next)
                 outbound.forEach {
@@ -267,7 +269,7 @@ suspend fun TCP(
 
         var i = 0
         override suspend fun receive(buffer: ByteBuffer)
-            = suspendCoroutine { next ->
+            = suspendCoroutineUninterceptedOrReturn { next ->
                 val handler = inbound[i++ % inbound.size]
                 inboundContinuation.set(next)
                 handler.socket.read(buffer, buffer, handler)
