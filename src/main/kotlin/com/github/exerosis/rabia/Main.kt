@@ -19,7 +19,7 @@ const val WARN = true
 const val COUNT = 10_000_000 - 1
 const val AVERAGE = 10_000
 
-val executor = Executors.newFixedThreadPool(16) as ThreadPoolExecutor
+val executor = Executors.newFixedThreadPool(20) as ThreadPoolExecutor
 val dispatcher = executor.asCoroutineDispatcher()
 val group = AsynchronousChannelGroup.withThreadPool(executor)!!
 
@@ -42,7 +42,7 @@ fun run() {
 
         SMR(3, address, nodes,
             queue=2000, repair=2001,
-            pipes=IntArray(256) { 3000 + (it * 10) }
+            pipes=IntArray(512) { 3000 + (it * 10) }
         ) {
 //            println("${index++}: $it")
         }
