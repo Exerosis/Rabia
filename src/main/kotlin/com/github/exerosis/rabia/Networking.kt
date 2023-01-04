@@ -257,6 +257,7 @@ suspend fun TCP(
         override fun close() = runBlocking { scope.cancel(); server.close() }
 
         override suspend fun send(buffer: ByteBuffer) =
+            //if you use normal suspend it's much slower (profile?)
             suspendCoroutineUninterceptedOrReturn { next ->
                 remaining.set(outbound.size)
                 outboundContinuation.set(next)

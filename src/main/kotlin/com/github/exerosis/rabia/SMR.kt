@@ -49,7 +49,7 @@ fun CoroutineScope.SMR(
     vararg pipes: Int,
     commit: (String) -> (Unit)
 ) {
-    val log = LongArray(65536) //Filled with NONE
+    val log = LongArray(65536 / pipes.size * pipes.size)
     val messages = ConcurrentHashMap<Long, String>()
     val committed = AtomicInteger(-1)
     val highest = AtomicInteger(-1)

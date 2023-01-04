@@ -50,7 +50,7 @@ suspend fun State.Node(
     }.toTypedArray())
     val buffer = allocateDirect(10)
     val half = logs / 2
-    var test = 0
+
     outer@ while (proposes.isOpen) {
         val proposed = messages()
         val realSlot = slot() //32 bit slot
