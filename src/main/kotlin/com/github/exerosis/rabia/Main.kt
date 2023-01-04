@@ -18,7 +18,7 @@ const val WARN = true
 const val COUNT = 10_000_000 - 1
 const val AVERAGE = 10_000
 
-val executor = Executors.newCachedThreadPool() as ThreadPoolExecutor
+val executor = Executors.newFixedThreadPool(32) as ThreadPoolExecutor
 val dispatcher = executor.asCoroutineDispatcher()
 
 fun run() {
@@ -43,11 +43,11 @@ fun run() {
         //4 - 20_000
         //8 - 36_000
         //14 - 61_000 - 50_000
-        //15 - dies
-        //16 - 69_000 - <something>
+        //15 - dies (2)
+        //16 - 68_000 - 35_000 (2)
         SMR(3, address, nodes,
             queue=2000, repair=2001,
-            pipes=IntArray(16) { 3000 + (it * 100) }
+            pipes=IntArray(8) { 3000 + (it * 100) }
         ) {
 //            println("${index++}: $it")
         }
