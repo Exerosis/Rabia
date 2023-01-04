@@ -232,8 +232,9 @@ suspend fun TCP(
                 override fun completed(result: Void?, client: AsynchronousSocketChannel) =
                     continuation.resume(client)
 
-                override fun failed(reason: Throwable, client: AsynchronousSocketChannel)  {
-                    client.connect(it, AsynchronousSocketChannel.open(group), this)
+                override fun failed(reason: Throwable, ignored: AsynchronousSocketChannel)  {
+                    val client = AsynchronousSocketChannel.open(group)
+                    client.connect(it, client, this)
                 }
             }); COROUTINE_SUSPENDED
         }
