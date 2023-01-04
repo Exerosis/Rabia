@@ -53,8 +53,10 @@ suspend fun State.Node(
     var test = 0
     outer@ while (proposes.isOpen) {
         val proposed = messages()
-        val realSlot = slot()
-        val current = realSlot % logs
+        val realSlot = slot() //32 bit slot
+        val current = realSlot % logs //the slot wrapped
+        if (realSlot % 15 != i)
+            error("Before wrapping")
         if (current % 15 != i)
             error("Before conversion")
         val whatISend = current.toShort()
