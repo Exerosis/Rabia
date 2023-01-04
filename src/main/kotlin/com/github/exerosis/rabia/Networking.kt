@@ -20,7 +20,6 @@ import kotlin.coroutines.intrinsics.COROUTINE_SUSPENDED
 import kotlin.coroutines.intrinsics.suspendCoroutineUninterceptedOrReturn
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
-import kotlin.coroutines.suspendCoroutine
 
 const val BROADCAST = "230.0.0.0" //230
 
@@ -226,7 +225,7 @@ suspend fun TCP(
         override fun failed(reason: Throwable, attachment: Unit) = throw reason
     })
 
-    addresses.forEach {
+/*    addresses.forEach {
         val client = AsynchronousSocketChannel.open(group)
         suspendCoroutine { continuation ->
             client.connect(it, Unit, object : CompletionHandler<Void, Unit> {
@@ -240,7 +239,18 @@ suspend fun TCP(
         client.setOption(SO_RCVBUF, size)
         client.setOption(TCP_NODELAY, false)
         outbound.add(Outbound(client))
+    }*/
+    addresses.forEach {
+        while (true) try {
+            outbound.add(Outbound(AsynchronousSocketChannel.open(group).apply {
+                connect(it).get()
+                setOption(SO_SNDBUF, size)
+                setOption(SO_RCVBUF, size)
+                setOption(TCP_NODELAY, false)
+            })); return@forEach
+        } catch (_: Throwable) {}
     }
+
     println("Connected to: ${outbound.size}")
     return object : Multicaster {
         override val isOpen = server.isOpen
