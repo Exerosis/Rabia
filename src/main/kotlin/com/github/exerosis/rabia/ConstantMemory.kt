@@ -27,7 +27,7 @@ class State(val logs: Int, val n: Int) {
 
 //if depth is less than current but not by a huge amount then it's old
 //if depth is greater than current by a huge amount then it's old
-inline fun out(a: Int, b: Int, half: Int) =
+inline fun isOld(a: Int, b: Int, half: Int) =
     a < b && (b - a) < half || a > b && (a - b) > half
 
 suspend fun State.Node(
@@ -62,7 +62,7 @@ suspend fun State.Node(
             val from = proposes.receive(buffer.clear()).address
             val depth = buffer.getShort(0).toInt() and 0xFFFF
 //            println("Depth: $depth Current: $current - ${out(depth, current, half)}")
-            if (out(depth, current, half)) continue
+            if (isOld(depth, current, half)) continue
             val proposal = buffer.getLong(2)
 
             info("Got Proposal: $proposal - $current $from")
@@ -92,9 +92,9 @@ suspend fun State.Node(
             while (statesZero[height] + statesOne[height] < majority) {
                 val from = states.receive(buffer.clear().limit(4)).address
                 val depth = buffer.getShort(0).toInt() and 0xFFFF
-                if (out(depth, current, half)) continue
+                if (isOld(depth, current, half)) continue
                 val round = buffer.get(2).toInt() and 0xFF
-                if (out(round, phase, 128)) continue
+                if (isOld(round, phase, 128)) continue
                 val op = buffer.get(3)
                 info("Got State (${statesZero[height] + statesOne[height] + 1}/$majority): $op - $current $from")
                 when (op) {
@@ -118,9 +118,9 @@ suspend fun State.Node(
             while (votesZero[height] + votesOne[height] + votesLost[height] < majority) {
                 val from = votes.receive(buffer.clear().limit(4)).address
                 val depth = buffer.getShort(0).toInt() and 0xFFFF
-                if (out(depth, current, half)) continue
+                if (isOld(depth, current, half)) continue
                 val round = buffer.get(2).toInt() and 0xFF
-                if (out(round, phase, 128)) continue
+                if (isOld(round, phase, 128)) continue
                 val op = buffer.get(3)
                 info("Got Vote (${votesZero[height] + votesOne[height] + votesLost[height] + 1}/$majority): $op - $current $from")
                 when (op) {
