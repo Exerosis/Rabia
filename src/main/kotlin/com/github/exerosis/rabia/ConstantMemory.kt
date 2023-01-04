@@ -48,24 +48,24 @@ suspend fun State.Node(
     val votes = TCP(address, port + 2, 65527 * 5, *nodes.map {
         InetSocketAddress(it, port + 2)
     }.toTypedArray())
-    val buffer = allocateDirect(10)
+    val buffer = allocateDirect(12)
     val half = logs / 2
     var test = 0
     outer@ while (proposes.isOpen) {
         val proposed = messages()
         val realSlot = slot() //32 bit slot
         val current = realSlot % logs //the slot wrapped
-        buffer.clear().putShort(current.toShort()).putLong(proposed)
+        buffer.clear().putInt(current).putLong(proposed)
         proposes.send(buffer.flip())
         info("Sent Proposal: $proposed - $current")
 
         while (indices[current] < majority) {
             val from = proposes.receive(buffer.clear()).address
-            val depth = buffer.getShort(0).toInt() and 0xFFFF
+            val depth = buffer.getInt()
 //            warn("Depth: $depth Current: $current")
 //            println("Depth: $depth Current: $current - ${out(depth, current, half)}")
             if (isOld(depth, current, half)) continue
-            val proposal = buffer.getLong(2)
+            val proposal = buffer.getLong(4)
 
             info("Got Proposal: $proposal - $current $from")
             if (indices[depth] < majority)
