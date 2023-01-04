@@ -55,14 +55,7 @@ suspend fun State.Node(
         val proposed = messages()
         val realSlot = slot() //32 bit slot
         val current = realSlot % logs //the slot wrapped
-        if (realSlot % 15 != i)
-            error("Before wrapping")
-        if (current % 15 != i)
-            error("Before conversion")
-        val whatISend = current.toShort()
-        if ((whatISend.toInt() and 0xFFFF) % 15 != i)
-            error("On the wrong slot")
-        buffer.clear().putShort(whatISend).putLong(proposed)
+        buffer.clear().putShort(current.toShort()).putLong(proposed)
         proposes.send(buffer.flip())
         info("Sent Proposal: $proposed - $current")
 
@@ -70,10 +63,6 @@ suspend fun State.Node(
             val from = proposes.receive(buffer.clear()).address
             val depth = buffer.getShort(0).toInt() and 0xFFFF
 //            warn("Depth: $depth Current: $current")
-            if (depth % 15 != i) {
-                if (test++ % 10000 == 0)
-                    warn("Got a message from the wrong guy!")
-            }
 //            println("Depth: $depth Current: $current - ${out(depth, current, half)}")
             if (isOld(depth, current, half)) continue
             val proposal = buffer.getLong(2)
