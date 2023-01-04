@@ -114,6 +114,7 @@ fun CoroutineScope.SMR(
         launch(CoroutineName("Pipe-$i") + dispatcher) { try {
             var last = -1L; var slot = i
             state.Node(pipes[i], address, n, { id ->
+                if (isEmpty()) println("Done!")
                 var amount = count.incrementAndGet()
                 while (amount >= AVERAGE && !count.compareAndSet(amount, 0))
                     amount = count.get()
