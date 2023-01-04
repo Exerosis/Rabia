@@ -38,7 +38,7 @@ suspend fun State.Node(
     slot: suspend () -> (Int),
     vararg nodes: InetAddress
 ) {
-    info("I: $i N: $n F: $f Majority: $majority")
+    warn("I: $i N: $n F: $f Majority: $majority")
     val proposes = TCP(address, port, 65527 * 5, *nodes.map {
         InetSocketAddress(it, port)
     }.toTypedArray())
@@ -65,6 +65,7 @@ suspend fun State.Node(
         while (indices[current] < majority) {
             val from = proposes.receive(buffer.clear()).address
             val depth = buffer.getShort(0).toInt() and 0xFFFF
+            if (depth % 15 != i) error("Got a message from the wrong guy!")
 //            println("Depth: $depth Current: $current - ${out(depth, current, half)}")
             if (isOld(depth, current, half)) continue
             val proposal = buffer.getLong(2)

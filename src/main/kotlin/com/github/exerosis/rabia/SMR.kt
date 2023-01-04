@@ -113,8 +113,7 @@ fun CoroutineScope.SMR(
     )
     instances.forEachIndexed { i, it -> it.apply {
         launch(CoroutineName("Pipe-$i") + dispatcher) { try {
-            var last = -1L;
-            val slot = AtomicInteger(i)
+            var last = -1L; var slot = i
             state.Node(i, pipes[i], address, n, { id ->
                 if (isEmpty()) println("Done!")
                 //TODO look into summing from a stats thread
@@ -131,24 +130,24 @@ fun CoroutineScope.SMR(
                     error("Bad Sync: $id != $last")
                     offer(last)
                     if (id != 0L) return@Node
-                    else repair(slot.get(), slot.get())
+                    else repair(slot, slot)
                 } else {
-                    log[slot.get() % log.size] = id
+                    log[slot % log.size] = id
                     messages.remove(id)
                 }
 
 //                var current: Int; do { current = highest.get() }
 //                while (current < slot && !highest.compareAndSet(current, slot))
 
-                slot.getAndAdd(pipes.size)
-                log[slot.get() % log.size] = 0L
+                slot += pipes.size
+                log[slot % log.size] = 0L
             }, {
                 debug("Size: $size")
 //                while (isActive && (slot - committed.get()) >= log.size) {}
                 take().also<Long> { last = it }
             }, {
 //                using.add(slot)
-                slot.get()
+                slot
             }, *nodes)
         } catch (reason: Throwable) {
             reason.printStackTrace()
