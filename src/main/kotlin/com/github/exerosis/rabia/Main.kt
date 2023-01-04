@@ -19,7 +19,7 @@ const val WARN = true
 const val COUNT = 10_000_000 - 1
 const val AVERAGE = 10_000
 
-val executor = Executors.newFixedThreadPool(32) as ThreadPoolExecutor
+val executor = Executors.newFixedThreadPool(16) as ThreadPoolExecutor
 val dispatcher = executor.asCoroutineDispatcher()
 val group = AsynchronousChannelGroup.withThreadPool(executor)
 fun run() {
