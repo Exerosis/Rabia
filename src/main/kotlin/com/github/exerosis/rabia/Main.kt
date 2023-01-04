@@ -7,10 +7,8 @@ import kotlinx.coroutines.runBlocking
 import java.net.InetAddress
 import java.net.InetAddress.getByName
 import java.net.NetworkInterface
-import java.nio.ByteBuffer
 import java.util.concurrent.Executors
 import java.util.concurrent.ThreadPoolExecutor
-import kotlin.experimental.and
 import kotlin.streams.asSequence
 import kotlin.time.ExperimentalTime
 
@@ -42,7 +40,7 @@ fun run() {
 
         SMR(3, address, nodes,
             queue=2000, repair=2001,
-            pipes=IntArray(20) { 3000 + (it * 100) }
+            pipes=IntArray(1) { 3000 + (it * 100) }
         ) {
 //            println("${index++}: $it")
         }
