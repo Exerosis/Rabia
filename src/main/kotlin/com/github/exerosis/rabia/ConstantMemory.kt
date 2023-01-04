@@ -38,7 +38,7 @@ suspend fun State.Node(
     slot: suspend () -> (Int),
     vararg nodes: InetAddress
 ) {
-    warn("I: $i N: $n F: $f Majority: $majority")
+    info("I: $i N: $n F: $f Majority: $majority")
     val proposes = TCP(address, port, 65527 * 5, *nodes.map {
         InetSocketAddress(it, port)
     }.toTypedArray())
