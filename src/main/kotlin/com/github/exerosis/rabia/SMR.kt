@@ -63,6 +63,7 @@ fun CoroutineScope.SMR(
         messages[id] = ""
         instances[abs(id % instances.size).toInt()].offer(id)
     }
+    instances.forEach { println(it.size) }
 
     suspend fun repair(start: Int, end: Int) {
         warn("Repair: $start - $end")
@@ -122,8 +123,7 @@ fun CoroutineScope.SMR(
                     val duration = mark.getAndSet(markNow()).elapsedNow()
                     val throughput = amount / duration.toDouble(SECONDS)
                     val system = bean.cpuLoad
-                    val average = bean.systemLoadAverage
-                    println("%,d - %.2f:%.2f on ${executor.activeCount} of ${executor.poolSize}".format(throughput.roundToInt(), system, average))
+                    println("%,d - %.2f - $size on ${executor.activeCount} of ${executor.largestPoolSize} ${executor.corePoolSize} ${executor.poolSize}".format(throughput.roundToInt(), system))
                 }
                 if (id != last) {
                     debug("Bad Sync: $id != $last")
