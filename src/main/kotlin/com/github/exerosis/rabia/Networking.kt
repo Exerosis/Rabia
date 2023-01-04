@@ -229,11 +229,11 @@ suspend fun TCP(
         val client = AsynchronousSocketChannel.open(group)
         suspendCoroutineUninterceptedOrReturn { continuation ->
             client.connect(it, Unit, object : CompletionHandler<Void, Unit> {
-                override fun completed(result: Void?, attachment: Unit?) =
+                override fun completed(result: Void, attachment: Unit) =
                     continuation.resume(Unit)
 
-                override fun failed(exc: Throwable?, attachment: Unit?)  {
-                    println("Timed out: $it")
+                override fun failed(exc: Throwable, attachment: Unit)  {
+                    exc.printStackTrace()
                     client.connect(it, Unit, this)
                 }
 
