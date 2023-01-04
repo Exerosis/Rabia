@@ -124,7 +124,7 @@ fun CoroutineScope.SMR(
                     val duration = mark.getAndSet(markNow()).elapsedNow()
                     val throughput = amount / duration.toDouble(SECONDS)
                     val system = bean.cpuLoad
-                    println("%,d - %.2f - $size on ${executor.activeCount} of ${executor.poolSize}".format(throughput.roundToInt(), system))
+                    warn("%,d - %.2f - $size on ${executor.activeCount} of ${executor.poolSize}".format(throughput.roundToInt(), system))
                 }
                 if (id != last) {
                     error("Bad Sync: $id != $last")
