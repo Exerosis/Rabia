@@ -116,6 +116,7 @@ fun CoroutineScope.SMR(
             var last = -1L; var slot = i
             state.Node(pipes[i], address, n, { id ->
                 if (isEmpty()) println("Done!")
+                //TODO look into summing from a stats thread
                 var amount = count.incrementAndGet()
                 while (amount >= AVERAGE && !count.compareAndSet(amount, 0))
                     amount = count.get()
@@ -123,10 +124,10 @@ fun CoroutineScope.SMR(
                     val duration = mark.getAndSet(markNow()).elapsedNow()
                     val throughput = amount / duration.toDouble(SECONDS)
                     val system = bean.cpuLoad
-                    println("%,d - %.2f - $size on ${executor.activeCount} of ${executor.largestPoolSize} ${executor.corePoolSize} ${executor.poolSize}".format(throughput.roundToInt(), system))
+                    println("%,d - %.2f - $size on ${executor.activeCount} of ${executor.poolSize}".format(throughput.roundToInt(), system))
                 }
                 if (id != last) {
-                    debug("Bad Sync: $id != $last")
+                    error("Bad Sync: $id != $last")
                     offer(last)
                     if (id != 0L) return@Node
                     else repair(slot, slot)
