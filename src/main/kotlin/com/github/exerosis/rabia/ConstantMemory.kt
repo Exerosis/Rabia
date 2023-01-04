@@ -55,10 +55,10 @@ suspend fun State.Node(
         val proposed = messages()
         val realSlot = slot()
         val current = realSlot % logs
-        if (realSlot % 16 != i)
+        val whatISend = current.toShort()
+        if ((whatISend.toInt() and 0xFFFF) % 16 != i)
             error("On the wrong slot")
-
-        buffer.clear().putShort(current.toShort()).putLong(proposed)
+        buffer.clear().putShort(whatISend).putLong(proposed)
         proposes.send(buffer.flip())
         info("Sent Proposal: $proposed - $current")
 
