@@ -212,7 +212,6 @@ suspend fun TCP(
             inboundContinuation.getAndSet(null).resumeWithException(reason)
     }
 
-    val outbound = CopyOnWriteArrayList<Outbound>()
     val inbound = CopyOnWriteArrayList<Inbound>()
     server.accept(Unit, object : CompletionHandler<AsynchronousSocketChannel, Unit> {
         override fun completed(result: AsynchronousSocketChannel, attachment: Unit) {
@@ -225,7 +224,7 @@ suspend fun TCP(
         override fun failed(reason: Throwable, attachment: Unit) = throw reason
     })
 
-    addresses.forEach {
+    val outbound = addresses.map {
         val client = suspendCoroutineUninterceptedOrReturn { continuation ->
             val client = AsynchronousSocketChannel.open(group)
             client.connect(it, client, object : CompletionHandler<Void, AsynchronousSocketChannel> {
@@ -241,20 +240,9 @@ suspend fun TCP(
         client.setOption(SO_SNDBUF, size)
         client.setOption(SO_RCVBUF, size)
         client.setOption(TCP_NODELAY, false)
-        outbound.add(Outbound(client))
+        Outbound(client)
     }
-//    addresses.forEach {
-//        while (true) try {
-//            outbound.add(Outbound(AsynchronousSocketChannel.open(group).apply {
-//                connect(it).get()
-//                setOption(SO_SNDBUF, size)
-//                setOption(SO_RCVBUF, size)
-//                setOption(TCP_NODELAY, false)
-//            })); return@forEach
-//        } catch (_: Throwable) {}
-//    }
 
-//    println("Connected to: ${outbound.size}")
     return object : Multicaster {
         override val isOpen = server.isOpen
         override fun close() = runBlocking { scope.cancel(); server.close() }
