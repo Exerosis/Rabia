@@ -11,7 +11,6 @@ import java.net.StandardSocketOptions.*
 import java.nio.ByteBuffer
 import java.nio.channels.*
 import java.nio.channels.CompletionHandler
-import java.util.*
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
@@ -213,13 +212,13 @@ suspend fun TCP(
             inboundContinuation.getAndSet(null).resumeWithException(reason)
     }
 
-    val waiters = LinkedList<Continuation<Unit>>()
-    val things = addresses.map { scope.async {
-        suspendCoroutineUninterceptedOrReturn {
-            waiters += it
-            COROUTINE_SUSPENDED
-        }
-    } }
+//    val waiters = LinkedList<Continuation<Unit>>()
+//    val things = addresses.map { scope.async {
+//        suspendCoroutineUninterceptedOrReturn {
+//            waiters += it
+//            COROUTINE_SUSPENDED
+//        }
+//    } }
     val inbound = CopyOnWriteArrayList<Inbound>()
     server.accept(Unit, object : CompletionHandler<AsynchronousSocketChannel, Unit> {
         override fun completed(result: AsynchronousSocketChannel, attachment: Unit) {
