@@ -225,25 +225,23 @@ suspend fun TCP(
         override fun failed(reason: Throwable, attachment: Unit) = throw reason
     })
 
-    addresses.map { scope.async {
-        val client = AsynchronousSocketChannel.open(group)
-        suspendCoroutineUninterceptedOrReturn { continuation ->
-            client.connect(it, Unit, object : CompletionHandler<Void, Unit> {
-                override fun completed(result: Void, attachment: Unit) =
-                    continuation.resume(Unit)
+    addresses.forEach {
+        val client = suspendCoroutineUninterceptedOrReturn { continuation ->
+            val client = AsynchronousSocketChannel.open(group)
+            client.connect(it, client, object : CompletionHandler<Void, AsynchronousSocketChannel> {
+                override fun completed(result: Void, attachment: AsynchronousSocketChannel) =
+                    continuation.resume(attachment)
 
-                override fun failed(exc: Throwable, attachment: Unit)  {
-                    exc.printStackTrace()
-                    client.connect(it, Unit, this)
+                override fun failed(exc: Throwable, attachment: AsynchronousSocketChannel)  {
+                    client.connect(it, AsynchronousSocketChannel.open(group), this)
                 }
-
             }); COROUTINE_SUSPENDED
         }
         client.setOption(SO_SNDBUF, size)
         client.setOption(SO_RCVBUF, size)
         client.setOption(TCP_NODELAY, false)
         outbound.add(Outbound(client))
-    } }.awaitAll()
+    }
 //    addresses.forEach {
 //        while (true) try {
 //            outbound.add(Outbound(AsynchronousSocketChannel.open(group).apply {
