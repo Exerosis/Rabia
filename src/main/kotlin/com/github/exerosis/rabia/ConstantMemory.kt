@@ -55,7 +55,7 @@ suspend fun State.Node(
         val proposed = messages()
         val realSlot = slot()
         val current = realSlot % logs
-        if (realSlot % 15 != i)
+        if (realSlot % 16 != i)
             error("On the wrong slot")
 
         buffer.clear().putShort(current.toShort()).putLong(proposed)
@@ -66,7 +66,7 @@ suspend fun State.Node(
             val from = proposes.receive(buffer.clear()).address
             val depth = buffer.getShort(0).toInt() and 0xFFFF
 //            warn("Depth: $depth Current: $current")
-            if (depth % 15 != i) {
+            if (depth % 16 != i) {
                 if (test++ % 10000 == 0)
                     warn("Got a message from the wrong guy!")
             }
