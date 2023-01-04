@@ -229,10 +229,10 @@ suspend fun TCP(
         val client = suspendCoroutineUninterceptedOrReturn { continuation ->
             val client = AsynchronousSocketChannel.open(group)
             client.connect(it, client, object : CompletionHandler<Void, AsynchronousSocketChannel> {
-                override fun completed(result: Void, attachment: AsynchronousSocketChannel) =
-                    continuation.resume(attachment)
+                override fun completed(result: Void?, client: AsynchronousSocketChannel) =
+                    continuation.resume(client)
 
-                override fun failed(exc: Throwable, attachment: AsynchronousSocketChannel)  {
+                override fun failed(reason: Throwable, client: AsynchronousSocketChannel)  {
                     client.connect(it, AsynchronousSocketChannel.open(group), this)
                 }
             }); COROUTINE_SUSPENDED
