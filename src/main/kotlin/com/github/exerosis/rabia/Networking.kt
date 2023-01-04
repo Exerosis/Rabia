@@ -225,31 +225,35 @@ suspend fun TCP(
         override fun failed(reason: Throwable, attachment: Unit) = throw reason
     })
 
-/*    addresses.forEach {
+    addresses.map { scope.async {
         val client = AsynchronousSocketChannel.open(group)
-        suspendCoroutine { continuation ->
+        suspendCoroutineUninterceptedOrReturn { continuation ->
             client.connect(it, Unit, object : CompletionHandler<Void, Unit> {
                 override fun completed(result: Void?, attachment: Unit?) =
                     continuation.resume(Unit)
-                override fun failed(exc: Throwable?, attachment: Unit?) =
+
+                override fun failed(exc: Throwable?, attachment: Unit?)  {
+                    println("Timed out: $it")
                     client.connect(it, Unit, this)
-            })
+                }
+
+            }); COROUTINE_SUSPENDED
         }
         client.setOption(SO_SNDBUF, size)
         client.setOption(SO_RCVBUF, size)
         client.setOption(TCP_NODELAY, false)
         outbound.add(Outbound(client))
-    }*/
-    addresses.forEach {
-        while (true) try {
-            outbound.add(Outbound(AsynchronousSocketChannel.open(group).apply {
-                connect(it).get()
-                setOption(SO_SNDBUF, size)
-                setOption(SO_RCVBUF, size)
-                setOption(TCP_NODELAY, false)
-            })); return@forEach
-        } catch (_: Throwable) {}
-    }
+    } }.awaitAll()
+//    addresses.forEach {
+//        while (true) try {
+//            outbound.add(Outbound(AsynchronousSocketChannel.open(group).apply {
+//                connect(it).get()
+//                setOption(SO_SNDBUF, size)
+//                setOption(SO_RCVBUF, size)
+//                setOption(TCP_NODELAY, false)
+//            })); return@forEach
+//        } catch (_: Throwable) {}
+//    }
 
 //    println("Connected to: ${outbound.size}")
     return object : Multicaster {
