@@ -227,7 +227,7 @@ suspend fun TCP(
             result.setOption(SO_RCVBUF, size)
             result.setOption(TCP_NODELAY, false)
             inbound.add(Inbound(result))
-            waiters.poll()?.resume(Unit)
+//            waiters.poll()?.resume(Unit)
             server.accept(Unit, this)
         }
         override fun failed(reason: Throwable, attachment: Unit) = throw reason
@@ -251,7 +251,7 @@ suspend fun TCP(
         client.setOption(TCP_NODELAY, false)
         Outbound(client)
     }
-    things.awaitAll()
+//    things.awaitAll()
     return object : Multicaster {
         override val isOpen = server.isOpen
         override fun close() = runBlocking { scope.cancel(); server.close() }
