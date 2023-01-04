@@ -5,12 +5,12 @@ import java.net.InetSocketAddress
 import java.nio.ByteBuffer.allocateDirect
 import kotlin.random.Random
 
-const val STATE_ZERO = 0.toByte()
-const val STATE_ONE = 1.toByte()
+const val STATE_ZERO = 0
+const val STATE_ONE = 1
 
-const val VOTE_ZERO = 0.toByte()
-const val VOTE_ONE = 1.toByte()
-const val VOTE_LOST = 2.toByte()
+const val VOTE_ZERO = 0
+const val VOTE_ONE = 1
+const val VOTE_LOST = 2
 
 class State(val logs: Int, val n: Int) {
     val f = n / 2
@@ -25,8 +25,9 @@ class State(val logs: Int, val n: Int) {
     val votesLost = ByteArray(logs * 256)
 }
 
-//if depth is less than current but not by a huge amount then it's old
-//if depth is greater than current by a huge amount then it's old
+//new = a current = b
+//if new is less than current but not by a huge amount then it's old
+//if new is greater than current by a huge amount then it's old
 inline fun isOld(a: Int, b: Int, half: Int) =
     a < b && (b - a) < half || a > b && (a - b) > half
 
@@ -86,18 +87,18 @@ suspend fun State.Node(
         var state = if (all) STATE_ONE else STATE_ZERO
         while (true) {
             val height = current shl 8 or phase
-            buffer.clear().putShort(current.toShort()).put(phase.toByte()).put(state)
+            buffer.clear().putShort(current.toShort()).put((phase shl 2 or state).toByte())
             states.send(buffer.flip())
             info("Sent State: $state - $current")
             while (statesZero[height] + statesOne[height] < majority) {
-                val from = states.receive(buffer.clear().limit(4)).address
+                val from = states.receive(buffer.clear().limit(3)).address
                 val depth = buffer.getShort(0).toInt() and 0xFFFF
                 if (isOld(depth, current, half)) continue
-                val round = buffer.get(2).toInt() and 0xFF
-                if (isOld(round, phase, 128)) continue
-                val op = buffer.get(3)
+                val op = buffer.get(2).toInt()
+                val round = op shr 2
+                if (isOld(round, phase, 32)) continue
                 info("Got State (${statesZero[height] + statesOne[height] + 1}/$majority): $op - $current $from")
-                when (op) {
+                when (op and 3) {
                     STATE_ONE -> ++statesOne[depth shl 8 or round]
                     STATE_ZERO -> ++statesZero[depth shl 8 or round]
                     else -> error("Invalid state!")
@@ -111,23 +112,22 @@ suspend fun State.Node(
             statesZero[height] = 0
             statesOne[height] = 0
 
-            buffer.clear().putShort(current.toShort()).put(phase.toByte()).put(vote)
+            buffer.clear().putShort(current.toShort()).put((phase shl 2 or vote).toByte())
             votes.send(buffer.flip())
             info("Sent Vote: $vote - $current")
             //TODO can we reduce the amount we wait for here.
             while (votesZero[height] + votesOne[height] + votesLost[height] < majority) {
-                val from = votes.receive(buffer.clear().limit(4)).address
+                val from = votes.receive(buffer.clear().limit(3)).address
                 val depth = buffer.getShort(0).toInt() and 0xFFFF
                 if (isOld(depth, current, half)) continue
-                val round = buffer.get(2).toInt() and 0xFF
-                if (isOld(round, phase, 128)) continue
-                val op = buffer.get(3)
+                val op = buffer.get(2).toInt()
+                val round = op shr 2
+                if (isOld(round, phase, 64)) continue
                 info("Got Vote (${votesZero[height] + votesOne[height] + votesLost[height] + 1}/$majority): $op - $current $from")
                 when (op) {
                     VOTE_ZERO -> ++votesZero[depth shl 8 or round]
                     VOTE_ONE -> ++votesOne[depth shl 8 or round]
                     VOTE_LOST -> ++votesLost[depth shl 8 or round]
-                    else -> error("Invalid vote!")
                 }
             }
 
@@ -151,6 +151,5 @@ suspend fun State.Node(
                 }; continue
             }; continue@outer
         }
-        error("For now lets not do this!")
     }
 }
