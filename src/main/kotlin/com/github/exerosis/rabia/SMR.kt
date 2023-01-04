@@ -112,7 +112,7 @@ fun CoroutineScope.SMR(
         com.sun.management.OperatingSystemMXBean::class.java
     )
     instances.forEachIndexed { i, it -> it.apply {
-        launch(CoroutineName("Pipe-$i") + dispatcher) { try {
+        launch(CoroutineName("Pipe-%02d".format(i)) + dispatcher) { try {
             var last = -1L; var slot = i
             state.Node(i, pipes[i], address, n, { id ->
                 if (isEmpty()) println("Done!")
