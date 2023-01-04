@@ -38,9 +38,12 @@ fun run() {
             getByName("192.168.1.3"),
         )
 
+        //1 - 4000
+        //2 - 8000
+        //4 - 20_000
         SMR(3, address, nodes,
             queue=2000, repair=2001,
-            pipes=IntArray(4) { 3000 + (it * 100) }
+            pipes=IntArray(8) { 3000 + (it * 100) }
         ) {
 //            println("${index++}: $it")
         }
