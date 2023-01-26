@@ -12,7 +12,7 @@ request = portal.context.makeRequestRSpec()
 lan = request.LAN()
 for i in [1, 2, 3]: #, 4, 5
     node = request.RawPC("node-" + str(i))
-    node.hardware_type = "d430" #d710
+    node.hardware_type = "d710" #d430
     node.disk_image = "urn:publicid:IDN+emulab.net+image+HyflowTM:Rabia-Kotlin-GO.node-1"
 #     node.addService(RSpec.Execute(
 #         shell="sh", command="sudo /local/scripts/startup.sh"
